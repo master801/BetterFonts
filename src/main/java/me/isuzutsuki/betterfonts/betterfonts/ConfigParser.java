@@ -1,16 +1,10 @@
 package me.isuzutsuki.betterfonts.betterfonts;
 
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Properties;
-
 import net.minecraft.client.Minecraft;
+
+import java.awt.*;
+import java.io.*;
+import java.util.Properties;
 
 /**
  * This class encapsulates all of the logic needed for loading and parsing a user configuration file. This file can override the
@@ -48,6 +42,7 @@ public class ConfigParser
         	    if (stream == null) {
         	    	System.out.println("[BetterFonts]NULL Stream");
         	        System.out.println("BetterFonts failed to create new config file.");
+                    return false;
         	    }
         	    int readBytes;
         	    byte[] buffer = new byte[4096];
@@ -109,11 +104,9 @@ public class ConfigParser
         String searchName = fontName.replaceAll("[- ]", "").toLowerCase();
 
         /* Java's logical font names are always allowed in the font.name property */
-        for(int i = 0; i < LOGICAL_FONTS.length; i++)
-        {
-            if(LOGICAL_FONTS[i].compareToIgnoreCase(searchName) == 0)
-            {
-                return LOGICAL_FONTS[i];
+        for (String LOGICAL_FONT : LOGICAL_FONTS) {
+            if (LOGICAL_FONT.compareToIgnoreCase(searchName) == 0) {
+                return LOGICAL_FONT;
             }
         }
 
@@ -124,13 +117,10 @@ public class ConfigParser
         String partialMatch = null;
 
         /* Search through all available fonts installed on the system */
-        for(int index = 0; index < allFonts.length; index++)
-        {
+        for (Font font : allFonts) {
             /* Always prefer an exact match on the font face name which terminates the search with a result */
-            Font font = allFonts[index];
             String name = font.getName().replaceAll("[- ]", "");
-            if(name.compareToIgnoreCase(searchName) == 0 || name.compareToIgnoreCase(altSearchName) == 0)
-            {
+            if (name.compareToIgnoreCase(searchName) == 0 || name.compareToIgnoreCase(altSearchName) == 0) {
                 return font.getName();
             }
 
@@ -140,10 +130,8 @@ public class ConfigParser
              * font. Always prefer to partial match the shortest possible font face name to match "Times New Roman" before
              * "Times New Roman Bold" for instance.
              */
-            if((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().indexOf(searchName) != -1)
-            {
-                if(partialMatch == null || partialMatch.length() > font.getName().length())
-                {
+            if ((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().indexOf(searchName) != -1) {
+                if (partialMatch == null || partialMatch.length() > font.getName().length()) {
                     partialMatch = font.getName();
                 }
             }

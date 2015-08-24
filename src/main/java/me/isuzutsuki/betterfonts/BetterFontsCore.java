@@ -1,44 +1,47 @@
 package me.isuzutsuki.betterfonts;
 
-import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
+import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
+import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.MCVersion;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.Map;
 
-@IFMLLoadingPlugin.MCVersion(value = "1.7.10")
-public class BetterFontsCore implements IFMLLoadingPlugin{
-	
-	public static File location;
-	
-	public String[] getASMTransformerClass() {
-	return new String[]{BTFClassTransformer.class.getName()};
-	}
-	
-	@Override
-	public void injectData(Map<String, Object> data) {
-	location = (File) data.get("coremodLocation");
-	}
+@MCVersion("1.8")
+public class BetterFontsCore implements IFMLLoadingPlugin {
 
-	public	String[] getLibraryRequestClass() {
+    public static File location;
+
+    public static final Logger BETTER_FONTS_LOGGER = LogManager.getLogger("BetterFonts");
+
+	@Override
+    public String[] getASMTransformerClass() {
+		return new String[] { BTFClassTransformer.class.getName() };
+    }
+    
+    @Override
+    public void injectData(Map<String, Object> data) {
+		BetterFontsCore.location = (File) data.get("coremodLocation");
+    }
+
+    @Override
+    public String getModContainerClass() {
+        return BTFDummyContainer.class.getName();
+    }
+
+    @Override
+    public String getSetupClass() {
+        return null;
+    }
+
+    @Override
+    public String getAccessTransformerClass() {
+        return null;
+    }
+
+	public String[] getLibraryRequestClass() {
 		return null;
 	}
 
-	@Override
-	public String getModContainerClass() {
-		return BTFDummyContainer.class.getName();
-	}
-
-	@Override
-	public String getSetupClass() {
-		return null;
-	}
-
-	@Override
-	public String getAccessTransformerClass() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	
 }
