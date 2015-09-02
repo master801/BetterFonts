@@ -1,15 +1,17 @@
 package me.isuzutsuki.betterfonts;
 
+import net.md_5.jbeat.PatcherIO;
 import net.minecraft.launchwrapper.IClassTransformer;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class BTFClassTransformer implements IClassTransformer {
+public final class BTFClassTransformer implements IClassTransformer {
+
+//    private static final String PATCH_FILE_PATH = "/patch/FontRenderer.java.patch";
+    private static final String PATCH_FILE_PATH = "/patch/FontRenderer.java.bps";
 
     /**
      * @param arg0 Deobfuscated name (usually the Searge class name)
@@ -19,43 +21,36 @@ public class BTFClassTransformer implements IClassTransformer {
      * @return The data for the class.
      */
     @Override
-    public byte[] transform(String arg0, String arg1, byte[] arg2) {
+    public byte[] transform(String arg0, String arg1, final byte[] arg2) {
         if (arg2 == null || arg2.length <= 0) return null;//Check if the class data is valid.
+        byte[] returnData = arg2;
         if (arg0.equals("net.minecraft.client.gui.FontRenderer")) {
-            BetterFontsCore.BETTER_FONTS_LOGGER.info("Transformer is about to patch class: {}", arg0);
-            arg2 = patchClassInJar(arg0, arg2, arg1, BetterFontsCore.location);
+            BetterFontsCore.BETTER_FONTS_LOGGER.info("Patching class \"{}\"...", arg0);
+            returnData = beatPatch(arg0, arg2);
         }
-        return arg2;
+        if (returnData == null || returnData.length <= 0) {//Patching failed
+            returnData = arg2;
+            BetterFontsCore.BETTER_FONTS_LOGGER.error("Failed to patch class \"{}\".");
+        }
+        return returnData;
     }
 
-    @Deprecated
-    public byte[] patchClassInJar(String name, byte[] bytes, String ObfName, File location) {
-        try {
-            //open the jar as zip
-            ZipFile zip = new ZipFile(location);
-            ZipEntry entry = zip.getEntry(name.replace('.', '/') + ".class");
-            if (entry == null) {
-                BetterFontsCore.BETTER_FONTS_LOGGER.error("{} not found in {}", name, location.getName());
-            } else {
-                //serialize the class file into the bytes array
-                InputStream zin = zip.getInputStream(entry);
-                int size = (int) entry.getSize();
-                byte[] newbytes = new byte[size];
-                int pos = 0;
-                while (pos < size) {
-                    final int len = zin.read(newbytes, pos, size - pos);
-                    if (len == 0) throw new IOException();
-                    pos += len;
-                }
-                if(!Arrays.equals(newbytes, bytes)) bytes = newbytes;
-                zin.close();
-                BetterFontsCore.BETTER_FONTS_LOGGER.info("Class {} was patched!", name);
-            }
-            zip.close();
-        } catch (Exception e) {
-            throw new RuntimeException("Error overriding " + name + " from " + location.getName(), e);
+    private byte[] beatPatch(final String className, final byte[] data) {
+        InputStream patchFileInputStream = BTFClassTransformer.class.getResourceAsStream(BTFClassTransformer.PATCH_FILE_PATH);
+        if (patchFileInputStream == null) {
+            BetterFontsCore.BETTER_FONTS_LOGGER.error("Failed to find patch file \"{}\"!", BTFClassTransformer.PATCH_FILE_PATH);
+            return data;
         }
-        return bytes;
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PatcherIO patcherIO = new PatcherIO(new ByteArrayInputStream(data), patchFileInputStream, byteArrayOutputStream);
+        try {
+            patcherIO.patch();
+        } catch (IOException e) {
+            BetterFontsCore.BETTER_FONTS_LOGGER.error("Caught exception \"{}\" when attempting to patch class \"{}\"!", e, className);
+            return data;
+        }
+        BetterFontsCore.BETTER_FONTS_LOGGER.info("Patched class \"{}\"!", className);
+        return byteArrayOutputStream.toByteArray();
     }
 
 }

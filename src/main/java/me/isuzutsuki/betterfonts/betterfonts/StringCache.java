@@ -10,8 +10,8 @@ import java.awt.Font;
 import java.awt.Point;
 import java.text.Bidi;
 
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -384,7 +384,7 @@ public class StringCache
 * @todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
 * @todo Optimize the underline/strikethrough drawing to draw a single line for each run
 */
-    public int renderString(String str, int startX, int startY, int initialColor, boolean shadowFlag)
+    public int renderString(String str, float startX, float startY, int initialColor, boolean shadowFlag)
     {
         /* Check for invalid arguments */
         if(str == null || str.isEmpty())
@@ -409,7 +409,7 @@ public class StringCache
 * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
 * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
 */
-        GL11.glColor3f(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
+        GlStateManager.color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
 
         /*
 * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -420,14 +420,14 @@ public class StringCache
 */
         if(antiAliasEnabled)
         {
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
 
         /* Using the Tessellator to queue up data in a vertex array and then draw all at once should be faster than immediate mode */
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
-        tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+        Tessellator tessellator = Tessellator.getInstance();
+        tessellator.getWorldRenderer().startDrawingQuads();
+        tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
         /* The currently active font syle is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = Font.PLAIN;
@@ -476,10 +476,10 @@ public class StringCache
             //if(true)
             {
                 tessellator.draw();
-                tessellator.startDrawingQuads();
-                tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+                tessellator.getWorldRenderer().startDrawingQuads();
+                tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.textureName);
+                GlStateManager.bindTexture(texture.textureName);
                 boundTextureName = texture.textureName;
             }
 
@@ -489,10 +489,10 @@ public class StringCache
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            tessellator.addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
-            tessellator.addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
-            tessellator.addVertexWithUV(x2, y2, 0, texture.u2, texture.v2);
-            tessellator.addVertexWithUV(x2, y1, 0, texture.u2, texture.v1);
+            tessellator.getWorldRenderer().addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
+            tessellator.getWorldRenderer().addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
+            tessellator.getWorldRenderer().addVertexWithUV(x2, y2, 0, texture.u2, texture.v2);
+            tessellator.getWorldRenderer().addVertexWithUV(x2, y1, 0, texture.u2, texture.v1);
         }
 
         /* Draw any remaining glyphs in the Tessellator's vertex array (there should be at least one glyph pending) */
@@ -505,9 +505,9 @@ public class StringCache
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             color = initialColor;
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
-            tessellator.startDrawingQuads();
-            tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+            GlStateManager.disableTexture2D();
+            tessellator.getWorldRenderer().startDrawingQuads();
+            tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
             for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
             {
@@ -538,10 +538,10 @@ public class StringCache
                     float y1 = startY + (UNDERLINE_OFFSET) / 2.0F;
                     float y2 = startY + (UNDERLINE_OFFSET + UNDERLINE_THICKNESS) / 2.0F;
 
-                    tessellator.addVertex(x1, y1, 0);
-                    tessellator.addVertex(x1, y2, 0);
-                    tessellator.addVertex(x2, y2, 0);
-                    tessellator.addVertex(x2, y1, 0);
+                    tessellator.getWorldRenderer().addVertex(x1, y1, 0);
+                    tessellator.getWorldRenderer().addVertex(x1, y2, 0);
+                    tessellator.getWorldRenderer().addVertex(x2, y2, 0);
+                    tessellator.getWorldRenderer().addVertex(x2, y1, 0);
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
@@ -553,16 +553,16 @@ public class StringCache
                     float y1 = startY + (STRIKETHROUGH_OFFSET) / 2.0F;
                     float y2 = startY + (STRIKETHROUGH_OFFSET + STRIKETHROUGH_THICKNESS) / 2.0F;
 
-                    tessellator.addVertex(x1, y1, 0);
-                    tessellator.addVertex(x1, y2, 0);
-                    tessellator.addVertex(x2, y2, 0);
-                    tessellator.addVertex(x2, y1, 0);
+                    tessellator.getWorldRenderer().addVertex(x1, y1, 0);
+                    tessellator.getWorldRenderer().addVertex(x1, y2, 0);
+                    tessellator.getWorldRenderer().addVertex(x2, y2, 0);
+                    tessellator.getWorldRenderer().addVertex(x2, y1, 0);
                 }
             }
 
             /* Finish drawing the last strikethrough/underline segments */
             tessellator.draw();
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GlStateManager.enableTexture2D();
         }
 
 
@@ -702,7 +702,7 @@ public class StringCache
             color = colorTable[colorCode] & 0xffffff | color & 0xff000000;
         }
 
-        Tessellator.instance.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+        Tessellator.getInstance().getWorldRenderer().setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
         return color;
     }
 
@@ -749,8 +749,8 @@ public class StringCache
             int length = stripColorCodes(entry, str, text);
 
             /* Layout the entire string, splitting it up by color codes and the Unicode bidirectional algorithm */
-            List<Glyph> glyphList = new ArrayList();
-            entry.advance = (int) layoutBidiString(glyphList, text, 0, length, entry.colors);
+            List<Glyph> glyphList = new ArrayList<Glyph>();
+            entry.advance = layoutBidiString(glyphList, text, 0, length, entry.colors);
 
             /* Convert the accumulated Glyph list to an array for efficient storage */
             entry.glyphs = new Glyph[glyphList.size()];

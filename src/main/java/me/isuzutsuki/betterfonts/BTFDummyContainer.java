@@ -7,7 +7,7 @@ import net.minecraftforge.fml.common.ModMetadata;
 
 import java.util.Collections;
 
-public class BTFDummyContainer extends DummyModContainer {
+public final class BTFDummyContainer extends DummyModContainer {
 
     public BTFDummyContainer() {
         super(new ModMetadata());
@@ -16,13 +16,8 @@ public class BTFDummyContainer extends DummyModContainer {
         meta.name = "BetterFonts";
         meta.version = "${version}";
         meta.credits = "thvortex for original codes";
-        meta.authorList = Collections.singletonList("iSuzutsuki");
-        meta.description = "";
+        meta.authorList.add("iSuzutsuki");
         meta.url = "https://secretdataz.github.io/BetterFonts";
-        meta.updateUrl = "";
-        meta.screenshots = new String[0];
-        meta.logoFile = "";
-
     }
 
     @Override

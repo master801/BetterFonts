@@ -1,5 +1,6 @@
 package me.isuzutsuki.betterfonts.betterfonts;
 
+import me.isuzutsuki.betterfonts.BetterFontsCore;
 import net.minecraft.client.Minecraft;
 
 import java.awt.*;
@@ -40,8 +41,8 @@ public class ConfigParser
         		InputStream stream = ConfigParser.class.getResourceAsStream("/config/BetterFonts.cfg");
         		OutputStream out;
         	    if (stream == null) {
-        	    	System.out.println("[BetterFonts]NULL Stream");
-        	        System.out.println("BetterFonts failed to create new config file.");
+        	    	BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] NULL Stream");
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
                     return false;
         	    }
         	    int readBytes;
@@ -51,10 +52,9 @@ public class ConfigParser
         	        while ((readBytes = stream.read(buffer)) > 0) {
         	            out.write(buffer, 0, readBytes);
         	        }
-        	    }catch(IOException e)
-        	    {
-        	    	System.out.println("[BetterFonts]IOException on creating config");
-        	    	System.out.println("BetterFonts failed to create new config file.");
+        	    } catch(IOException e) {
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] IOException on creating config");
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
         	    }
         	}
             FileInputStream cfgFile = new FileInputStream(cfg);
@@ -62,13 +62,9 @@ public class ConfigParser
             cfgFile.close();
             success = true;
         }
-        catch(IOException e)
+        catch(IOException | IllegalArgumentException e)
         {
-            System.out.println("BetterFonts " + e.getMessage());
-        }
-        catch(IllegalArgumentException e)
-        {
-            System.out.println("BetterFonts " + e.getMessage());
+            BetterFontsCore.BETTER_FONTS_LOGGER.error(e);
         }
 
         return success;

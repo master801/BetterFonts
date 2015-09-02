@@ -9,9 +9,7 @@ import java.io.File;
 import java.util.Map;
 
 @MCVersion("1.8")
-public class BetterFontsCore implements IFMLLoadingPlugin {
-
-    public static File location;
+public final class BetterFontsCore implements IFMLLoadingPlugin {
 
     public static final Logger BETTER_FONTS_LOGGER = LogManager.getLogger("BetterFonts");
 
@@ -22,7 +20,6 @@ public class BetterFontsCore implements IFMLLoadingPlugin {
     
     @Override
     public void injectData(Map<String, Object> data) {
-		BetterFontsCore.location = (File) data.get("coremodLocation");
     }
 
     @Override
@@ -39,9 +36,5 @@ public class BetterFontsCore implements IFMLLoadingPlugin {
     public String getAccessTransformerClass() {
         return null;
     }
-
-	public String[] getLibraryRequestClass() {
-		return null;
-	}
 
 }

@@ -1,0 +1,997 @@
+BPS1v$€@ A”//Start BetterFonts
+import me.isuzutsuki.betterfonts.betterfonts.*;
+//End BetterFonts
+
+@SideOnly(Side.CLIENT)
+public class FontRenderer implements IResourceManagerReloadListener
+{
+    private static final ResourceLocation[] unicodePageLocations = new ResourceLocation[256];
+    /** Array of width of all the characters in default.png */
+    protected int[] charWidth = new int[256];
+    /** the height in pixels of default text */
+    public int FONT_HEIGHT = 9;
+    public Random fontRandom = new Random();
+    /** Array of the start/end column (in upper/lower nibble) for every glyph in the /font directory. */
+    protected byte[] glyphWidth = new byte[65536];
+    /**
+ BšM‚* Array of RGB triplets defining the 16 standard chat colors followed by 16 darker version of the same colors for
+ h€Å* drop shadows.
+ ¤y–*/
+    private int[] colorCode = new int[32];
+    protected final ResourceLocation locationFontTexture;
+    /** The RenderEngine used to load and setup glyph textures. */
+    private final TextureManager renderEngine;
+    /** Current X coordinate at which to draw the next character. */
+    protected float posX;
+    /** Current Y coordinate at which to draw the next character. */
+    protected float posY;
+    /** If true, strings should be rendered with Unicode fonts instead of the default.png font */
+    private boolean unicodeFlag;
+    /** If true, the Unicode Bidirectional Algorithm should be run before rendering any string. */
+    private boolean bidiFlag;
+    /** Used to specify new red value for the current color. */
+    private float redøEblue value for the current color. */
+    private float blue;
+    /** Used to specify new green value for the current color. */
+    private float green;
+    /** Used to speify new alpha value for the current color. */
+    private float alpha;
+    /** Text color of the currently rendering string. */
+    private int textColor;
+    /** Set if the "k" style (random) is active in currently rendering string */
+    private boolean randomStyle;
+    /** Set if the "l" style (bold) is active in currently rendering string */
+    private boolean boldStyle;
+    /** Set if the "o" style (italic) is active in currently rendering string */
+    private boolean italicStyle;
+    /** Set if the "n" style (underlined) is active in currently rendering string */
+    private boolean underlineStyle;
+    /** Set if the "m" style (strikethrough) is active in currently rendering string */
+    private boolean strikethroughStyle;
+    private static final String __OBFID = "CL_0`še‰660";
+
+    //Start BetterFonts
+    public static boolean betterFontsEnabled = true;
+    public StringCache stringCache;
+    public boolean dropShadowEnabled = true, enabled = true;
+    //End BetterFonts
+
+    public FontRenderer(GameSettings p_i1035_1_, ResourceLocation p_i1035_2_, TextureManager p_i1035_3_, boolean p_i1035_4_)
+    {
+ ›4„!€this.locationFontTexture = p_i1035_2_;
+ ›Ò€this.renderEngine = p_i1035_3_;
+ ›Ä€this.unicodeFlag = p_i1035_4_;
+ ›Â)€bindTexture(this.locationFontTexture);
+
+ ›Öùfor (int i = 0; i < 32; ++i)
+ ›¾{
+ «ˆñint j = (i >> 3 & 1) * 85;
+ «º€int k = (i >> 2 & 1) * 170 + j;
+ «ÄŒõl = (i >> 1 & 1) * 170 + j;
+ «Ä€int i1 = (i >> 0 & 1) * 170 + j;
+
+ «Êµif (i == 6)
+ «œ{
+ »ˆ©k += 85;
+ «–•}
+
+ «Œéif (p_i1035_1_.anaglyph)
+ «¶{
+ »ˆ5€int j1 = (k * 30 + l * 59 + i1 * 11) / 100;
+ »Ü€int k1 = (k * 30 + l * 70) / 100;
+ »È€int l1 = (k * 30 + i1 * 70) / 100;
+ »Ê¥k = j1;
+ »”¥l = k1;
+ »”©i1 = l1;
+ «–•}
+
+ «Œ¹if (i >= 16)
+ «{
+ »ˆ¥k /= 4;
+ »”¥l /= 4;
+ »”©i1 /= 4;
+ «–•}
+
+ «Œ	this.colorCode[i] = (k & 255) << 16 | (l & 255) << 8 | i1 & 255;
+ ›€}
+ ›ˆÕ//Start BetterFonts
+ ›¬ume.isuzutsuki.betterfonts.BetterFontsCore.BETTER_FONTS_LOGGER.info("Starting BetterFonts...");¤-‚if(p_i1035_2_.getResourcePath().equalsIgnoreCase("textures/font/ascii.png") && stringCache == null) {
+   	 ›(‚//Read optional config file to override the default font name/size
+ «
+€-€ConfigParser config = new ConfigParser();
+ «ØÑint fontSize = 18;
+ «ªñboolean antiAlias = false;
+ «º€String fontName = "SansSerif";
+ «ÂQ€if(config.loadConfig("/config/BetterFonts.cfg")) {
+ »ê5€fontName = config.getFontName("SansSerif");
+ »Ü€fontSize = config.getFontSize(18);
+ »Êe€antiAlias = config.getBoolean("font.antialias", false);
+ »ôy€dropShadowEnabled = config.getBoolean("font.dropshadow", true);´‚    me.isuzutsuki.betterfonts.BetterFontsCore.BETTER_FONTS_LOGGER.info("Loaded configuration...");
+ «d}
+ «ˆ-€stringCache = new StringCache(colorCode);
+ «Øq€stringCache.setDefaultFont(fontName, fontSize, antiAlias);
+ ›ú}
+ ›ˆÍ//End BetterFonts
+ ›¨M‚this.readGlyphSizes();
+    }
+
+    public void onResourceManagerReload(IResourceManager resourceManager)
+    {
+ ›h€åthis.readFontTexture();
+ ›´İthis.readGlyphSizes();
+Œ‘}
+
+Œ€private void readFontTexture()
+    {
+ ›€€BufferedImage bufferedimage;
+
+ ›Â•try
+ ›Œ{
+ «ˆbufferedimage = TextureUtil.readBufferedImage(getResourceInputStream(álocationFontTexture));
+ ›F€}
+ ›ˆ€catch (IOException ioexception)
+ ›Ä{
+ «ˆ)€throw new RuntimeException(ioexception);
+ ›Ö•}
+
+ ›Œ€int i = bufferedimage.getWidth();
+ ›È€int j = bufferedimage.getHeight();¤ùint[] aint = new int[i * j];
+ ›€=€bufferedimage.getRGB(0, 0, i, j, aint, 0, i);
+ ›àÅint k = j / 16;
+ ›¤Åint l = i / 16;
+ ›¤¹byte b0 = 1;
+ ›ñfloat f = 8.0F / (float)l;
+ ›º½int i1 = 0;
+
+ › Éwhile (i1 < 256)
+ ›¦{
+ «ˆÍint j1 = i1 % 16;
+ «¨Õint k1 = i1 / 16;
+
+ «¬½if (i1 == 32)
+ « {
+ »ˆùthis.charWidth[i1] = 3 + b0;
+ «¾•}
+
+ «ŒÍint l1 = l - 1;
+
+ «¨¹while (true)
+ «{
+ »ˆ¹if (l1 >= 0)
+ »{
+ Ëˆİint i2 = j1 * l + l1;
+ Ë°áboolean flag = true;
+
+ Ë²!€for (int j2 = 0; j2 < k && flag; ++j2)
+ ËÒ{
+ Ûˆıint k2 = (k1 * l + j2) * i;
+
+ ÛÀ€if ((aint[i2 + k2] >> 24 & 255) != 0)
+ ÛĞ{
+ ëˆ½flag = false;
+ Û }
+ Ëˆ•}
+
+ ËŒ­if (flag)
+ Ë˜{
+ Ûˆ--l1;
+ Û­continue;
+ Ë˜}
+ »ˆ•}
+
+ »Œ++l1;
+ »	this.charWidth[i1] = (int)(0.5D + (double)((float)l1 * f)) + b0;
+ »€++i1;
+ »¡break;
+ «’}
+ ›ˆY€}
+    }
+
+    private void readGlyphSizes()
+    {
+ ›î€InputStream inputstream = null;
+
+ ›È•try
+ ›Œ{
+ «ˆUinputstream = getResourceInputStream(new ResourceLocation("font/glyph_sizes.bin"));
+ «,€€inputstream.read(this.glyphWidth);
+ ›Ê}
+ ›ˆ€catch (IOException ioexception)
+ ›Ä{
+ «ˆ)€throw new RuntimeException(ioexception);
+ ›Ö}
+ ›ˆ¥finally
+ ›”{
+ «ˆ€IOUtils.closeQuietly(inputstream);
+ ›ÊÕ}
+    }
+
+    /**
+ ¬* Pick how to render a single character and return the width used.
+ 
+€‚*/
+    private float renderCharAtPos(int p_78278_1_, char p_78278_2_, boolean p_78278_3_)
+    {
+ ›H€M¦return p_78278_2_ == 32 ? 4.0F : ("\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(p_78278_2_) != -1 && !this.unicodeFlag ? this.renderDefaultChar(p_78278_1_, p_78278_3_) : this.renderUnicodeChar(p_78278_2_, p_78278_3_));
+    }
+
+    /**
+ h’i* Render a single character with the default.png font at current (posX,posY) location...
+ 6€Y*/
+    protected float renderDefaultChar(int p_78266_1_, boolean p_78266_2_)
+    {
+ ›.€%€float f = (float)(p_78266_1_ % 16 * 8);
+ ›Ô)€float f1 = (float)(p_78266_1_ / 16 * 8);
+ ›Ö€float f2 = p_78266_2_ ? 1.0F : 0.0F;
+ ›Î!€bindTexture(this.locationFontTexture);
+ ›Ò]€float f3 = (float)this.charWidth[p_78266_1_] - 0.01F;
+ ›ğ€GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
+ ›Ğ5€GL11.glTexCoord2f(f / 128.0F, f1 / 128.0F);
+ ›ÜıGL11.glVertex3f(this.posX + f2, ¹posY, 0.0F);
+ ›è]€GL11.glTexCoord2f(f / 128.0F, (f1 + 7.99F) / 128.0F);
+ ›ğm€GL11.glVertex3f(this.posX - f2, this.posY + 7.99F, 0.0F);
+ ›øm€GL11.glTexCoord2f((f + f3 - 1.0F) / 128.0F, f1 / 128.0F);
+ ›ø}€GL11.glVertex3f(this.posX + f3 - 1.0F + f2, this.posY, 0.0F);
+ › €GL11.glTexCoord2f((f + f3 - 1.0F) / 128.0F, (f1 + 7.99F) / 128.0F);
+ ›€GL11.glVertex3f(this.posX + f3 - 1.0F - f2, this.posY + 7.99F, 0.0F);
+ ›€½GL11.glEnd();
+ › ƒreturn (float)this.charWidth[p_78266_1_];
+    }
+
+    private ResourceLocation getUnicodePageLocation(int p_111271_1_)
+    {
+ ›A€if (unicodePageLocations[p_111271_1_] == null)
+ ›â{
+ «ˆyƒunicodePageLocations[p_111271_1_] = new ResourceLocation(String.format("textures/font/unicode_page_%02x.png", new Object[] {Integer.valueOf(p_111271_1_)}));
+ ›>•}
+
+ ›Œu€return unicodePageLocations[p_111271_1_];
+    }
+
+    /**
+ üA‚* Load one of the /font/glyph_XX.png into a new GL texture and store the texture ID in glyphTextureName array.
+ b€y€*/
+    private void loadGlyphTexture(int p_78257_1_)
+    {
+ ›ş%bindTexture(this.getUnicodePageLocation(p_78257_1_));
+    }
+
+    /**
+ €I‚* Render a single Unicode character at current (posX,posY) location using one of the /font/glyph_XX.png files...
+ f€]*/
+    protected float renderUnicodeChar(char p_78277_1_, boolean p_78277_2_)
+    {
+ ›0€€if (this.glyphWidth[p_78277_1_] == 0)
+ ›Ğ{
+ «ˆ¹return 0.0F;
+ ›}
+ ›ˆ™else
+ ›{
+ «ˆíint i = p_78277_1_ / 256;
+ «¸íthis.loadGlyphTexture(i);
+ «¸1€int j = this.glyphWidth[p_78277_1_] >>> 4;
+ «ÚŒ€k = this.glyphWidth[p_78277_1_] & 15;
+ «ØÕfloat f = (float)j;
+ «¬ñfloat f1 = (float)(k + 1);
+ «º=€float f2 = (float)(p_78277_1_ % 16 * 16) + f;
+ «àM€float f3 = (float)((p_78277_1_ & 255) / 16 * 16);
+ «èñfloat f4 = f1 - f - 0.02F;
+ «º€float f5 = p_78277_2_ ? 1.0F : 0.0F;
+ «Î€GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
+ «Ğ9€GL11.glTexCoord2f(f2 / 256.0F, f3 / 256.0F);
+ «ŞM€GL11.glVertex3f(this.posX + f5, this.posY, 0.0F);
+ «èe€GL11.glTexCoord2f(f2 / 256.0F, (f3 + 15.98F) / 256.0F);
+ «ôm€GL11.glVertex3f(this.posX - f5, this.posY + 7.99F, 0.0F);
+ «øU€GL11.glTexCoord2f((f2 + f4) / 256.0F, f3 / 256.0F);
+ «ì}€GL11.glVertex3f(this.posX + f4 / 2.0F + f5, this.posY, 0.0F);
+ « €GL11.glTexCoord2f((f2 + f4) / 256.0F, (f3 + 15.98F) / 256.0F);
+ «€GL11.glVertex3f(this.posX + f4 / 2.0F - f5, this.posY + 7.99F, 0.0F);
+ «€½GL11.glEnd();
+ « €return (f1 - f) / 2.0F + 1.0F;
+ ›ÂÕ}
+    }
+
+    /**
+ ¬5€* Draws the specified string with a shadow.
+ Üm‚*/
+    public int drawStringWithShadow(String p_175063_1_, float p_175063_2_, float p_175063_3_, int p_175063_4_)
+    {
+ ›x€Ireturn this.drawString(p_175063_1_, p_175063_2_, p_175063_3_, p_175063_4_, true);
+Œ¹}
+
+    /**
+ L€ı* Draws the specified string.
+ À1*/
+    public int drawString(String text, int x, int y, int color)
+    {
+ ›€y€return this.drawString(text, (float)x, (float)y, color, false);”¹}
+
+    /**
+ (€* Draws the specified string. Args: string, x, y, color, dropShadow
+ €ƒ*/
+    public int drawString(String p_175065_1_, float p_175065_2_, float p_175065_3_, int p_175065_4_, boolean p_175065_5_)
+    {
+ ›ÁenableAlpha();
+ ›¢Õthis.resetStyles();
+ ›¬©int j;
+
+ ›–Qif (p_175065_5_ && dropShadowEnabled) //BetterFonts - Add dropShadowEnabled check.
+ ›*€{
+ «ˆ‚j = this.renderString(p_175065_1_, p_175065_2_ + 1.0F, p_175065_3_ + 1.0F, p_175065_4_, true);
+ «B€‚j = Math.max(j, this.renderString(p_175065_1_, p_175065_2_, p_175065_3_, p_175065_4_, false));
+ ›B€}
+ ›ˆ™else
+ ›{
+ «ˆMj = this.renderString(p_175065_1_, p_175065_2_, p_175065_3_, p_175065_4_, false);
+ ›(€•}
+
+ ›ŒÍreturn j;
+    }
+
+Œ•/**
+ ¼Q‚* Apply Unicode Bidirectional Algorithm to string and return a new possibly reordered string for visual rendering.
+ j€}€*/
+    private String bidiReorder(String p_147647_1_)
+    {
+ › €Õ//Start BetterFonts
+ ›¬if (betterFontsEnabled && stringCache != null) return p_147647_1_;
+ ›
+€Í//End BetterFonts
+ ›¨•try
+ ›Œ{
+ «ˆBidi bidi = new Bidi((new ArabicShaping(8)).shape(p_147647_1_), 127);´ñbidi.setReorderingMode(0);
+ «`€€return bidi.writeReordered(2);
+ ›Â}
+ ›ˆ]€catch (ArabicShapingException arabicshapingexception)
+ ›ğ{
+ «ˆÕreturn p_147647_1_;
+ ›¬­}
+    }
+
+Œ•/**
+ ¬y* Reset all style flag fields in the class to false; called at the start of string rendering
+ >€*/
+Œ€private void resetStyles()
+    {
+ ›Øíthis.randomStyle = false;
+ ›¸åthis.boldStyle = false;
+ ›´íthis.italicStyle = false;
+ ›¸ùthis.underlineStyle = false;
+ ›¾Q€this.strikethroughStyle = false;
+    }
+
+    /**
+ ê)* Render a single line string at the current (posX,posY) and update posX
+ €Y*/
+    private void renderStringAtPos(String p_78255_1_, boolean p_78255_2_)
+    {
+ ›.€=€for (int i = 0; i < p_78255_1_.length(); ++i)
+ ›à{
+ «ˆ€char c0 = p_78255_1_.charAt(i);
+ «Ä¡int j;
+ «’©int k;
+
+ «–=€if (c0 == 167 && i + 1 < p_78255_1_.length())
+ «à{
+ »ˆEj = "0123456789abcdefklmnor".indexOf(p_78255_1_.toLowerCase().charAt(i + 1));
+
+ »$€µif (j < 16)
+ »œ{
+ Ëˆíthis.randomStyle = false;
+ Ë¸åthis.boldStyle = false;
+ Ë´ıthis.strikethroughStyle = false;´ ›Şùthis.underlineStyle = false;
+ Ë¾õthis.italicStyle = false;
+
+ Ë¼Ùif (j < 0 || j > 15)
+ Ë®{
+ Ûˆ¥j = 15;
+ Ë”•}
+
+ ËŒÅif (p_78255_2_)
+ Ë¤{
+ Ûˆ©j += 16;
+ Ë–•}
+
+ ËŒák = this.colorCode[j];
+ Ë²Õthis.textColor = k;
+ Ë¬5‚setColor((float)(k >> 16) / 255.0F, (float)(k >> 8 & 255) / 255.0F, (float)(k & 255) / 255.0F, this.alpha);
+ »\€}
+ »ˆÍelse if (j == 16)
+ »¨{
+ Ëˆéthis.randomStyle = true;
+ »¶}
+ »ˆÍelse if (j == 17)
+ »¨{
+ Ëˆáthis.boldStyle = true;
+ »²}
+ »ˆÍelse if (j == 18)
+ »¨{
+ Ëˆ€this.strikethroughStyle = true;
+ »Ä}
+ »ˆÍelse if (j == 19)
+ »¨{
+ Ëˆõthis.underlineStyle = true;
+ »¼}
+ »ˆÍelse if (j == 20)
+ »¨{
+ Ëˆéthis.italicStyle = true;
+ »¶}
+ »ˆÍelse if (j == 21)
+ »¨{
+ Ëˆíthis.randomStyle = false;
+ Ë¸åthis.boldStyle = false;
+ Ë´	€this.strikethroughStyle = false;
+ ËÆùthis.underlineStyle = false;
+ Ë¾íthis.italicStyle = false;
+ Ë¸a€setColor(this.red, this.blue, this.green, this.alpha);
+ »ò•}
+
+ »Œ™++i;
+ «}
+ «ˆ™else
+ «{
+ »ˆ} j = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(c0);
+
+ » 	€if (this.randomStyle && j != -1)
+ »Æ{
+ Ëˆ‘do
+ ËŠ{
+ ÛˆU€k = this.fontRandom.nextInt(this.charWidth.length);
+ Ëì}
+ ËˆM€while (this.charWidth[j] != this.charWidth[k]);
+
+ Ëè¡j = k;
+ »’•}
+
+ »Œ€float f1 = getCharWidth(c0) / 32f;
+ »Ê-boolean flag1 = (c0 == 0 || j == -1 || this.unicodeFlag) && p_78255_2_;
+
+ »€±if (flag1)
+ »š{
+ Ëˆœ©X -= f1;
+ Ë¦Éthis.posY -= f1;
+ »¦•}
+
+ »Œq€float f = this.renderCharAtPos(j, c0, this.italicStyle);
+
+ »ú±if (flag1)
+ »š{
+ ËˆÉthis.posX += f1;
+ Ë¦Éthis.posY += f1;
+ »¦•}
+
+ »ŒÕif (this.boldStyle)
+ »¬{
+ ËˆÑthis.posX += f1;
+
+ Ëª±if (flag1)
+ Ëš{
+ ÛˆÉthis.posX -= f1;
+ Û¦Éthis.posY -= f1;
+ Ë¦•}
+
+ ËŒA€this.renderCharAtPos(j, c0, this.italicStyle);
+ ËâÑthis.posX -= f1;
+
+ Ëª±if (flag1)
+ Ëš{
+ ÛˆÉthis.posX += f1;
+ Û¦Éthis.posY += f1;
+ Ë¦•}
+
+ ËŒ™++f;
+ »•}
+
+ »Œ±doDraw(f);
+ «š}
+ ›ˆ­}
+    }
+
+Œ€protected void doDraw(float f)
+    {
+ ›ğ{
+ «ˆ{
+ »ˆéTessellator tessellator;
+ »¶€WorldRenderer worldrenderer;
+
+ »Âùif (this.strikethroughStyle)
+ »¾{
+ Ëˆ)€tessellator = Tessellator.getInstance();
+ ËÖE€worldrenderer = tessellator.getWorldRenderer();
+ Ëä€GlStateManager.disableTexture2D();
+ ËÊ€worldrenderer.startDrawingQuads();
+ ËÊ!‚worldrenderer.addVertex((double)this.posX, (double)(this.posY + (float)(this.FONT_HEIGHT / 2)), 0.0D);
+ ËR€9‚worldrenderer.addVertex((double)(this.posX + f), (double)(this.posY + (float)(this.FONT_HEIGHT / 2)), 0.0D);
+ Ë^€U‚worldrenderer.addVertex((double)(this.posX + f), (double)(this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0F), 0.0D);
+ Ël€=‚worldrenderer.addVertex((double)this.posX, (double)(this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0F), 0.0D);
+ Ë`€Õtessellator.draw();
+ Ë¬€GlStateManager.enableTexture2D();
+ »È•}
+
+ »Œéif (this.underlineStyle)
+ »¶{
+ Ëˆ)€tessellator = Tessellator.getInstance();
+ ËÖE€worldrenderer = tessellator.getWorldRenderer();
+ Ëä€GlStateManager.disableTexture2D();
+ ËÊ€worldrenderer.startDrawingQuads();
+ ËÊ€int l = this.underlineStyle ? -1 : 0;
+ ËĞ=‚worldrenderer.addVertex((double)(this.posX + (float)l), (double)(this.posY + (float)this.FONT_HEIGHT), 0.0D);
+ Ë`€!‚worldrenderer.addVertex((double)(this.posX + f), (double)(this.posY + (float)this.FONT_HEIGHT), 0.0D);
+ ËR€=‚worldrenderer.addVertex((double)(this.posX + f), (double)(this.posY + (float)this.FONT_HEIGHT - 1.0F), 0.0D);
+ Ë`€Y‚worldrenderer.addVertex((double)(this.posX + (float)l), (double)(this.posY + (float)this.FONT_HEIGHT - 1.0F), 0.0D);
+ Ën€Õtessellator.draw();
+ Ë¬€GlStateManager.enableTexture2D();
+ »È•}
+
+ »Œıthis.posX += (float)((int)f);
+ «À}
+ ›ˆÕ}
+    }
+
+    /**
+ ¬* Render string either left or right aligned depending on bidiFlag
+ 
+€=ƒ*/
+    private int renderStringAligned(String p_78274_1_, int p_78274_2_, int p_78274_3_, int p_78274_4_, int p_78274_5_, boolean p_78274_6_)
+Œ{
+ ›0Ñif (this.bidiFlag)
+ ›ª{
+ «ˆu€int i1 = this.getStringWidth(this.bidiReorder(p_78274_1_));
+ «ü1€p_78274_2_ = p_78274_2_ + p_78274_4_ - i1;
+ ›Ú•}
+
+ ›Œ]‚return this.renderString(p_78274_1_, (float)p_78274_2_, (float)p_78274_3_, p_78274_5_, p_78274_6_);
+    }
+
+    /**
+ p€‚* Render single line string by setting GL color, current (posX,posY), and calling renderStringAtPos()
+ P€ƒ*/
+    private int renderString(String p_180455_1_, float p_180455_2_, float p_180455_3_, int p_180455_4_, boolean p_180455_5_)
+Œ{
+ ›éif (p_180455_1_ == null)
+ ›¶{
+ «ˆ­return 0;
+ ›˜}
+ ›ˆ™else
+ ›{
+ «ˆÑif (this.bidiFlag)
+ «ª{
+ »ˆ9€p_180455_1_ = this.bidiReorder(p_180455_1_);
+ «Ş•}
+
+ «Œ€if ((p_180455_4_ & -67108864) == 0)
+ «Ì{
+ »ˆíp_180455_4_ |= -16777216;
+ «¸•}
+
+ «ŒÉif (p_180455_5_)
+ «¦{
+ »ˆ!p_180455_4_ = (p_180455_4_ & 16579836) >> 2 | p_180455_4_ & -16777216;
+ «€•}
+
+ «Œ]€this.red = (float)(p_180455_4_ >> 16 & 255) / 255.0F;
+ «ğ]€this.blue = (float)(p_180455_4_ >> 8 & 255) / 255.0F;
+ «ğM€this.green = (float)(p_180455_4_ & 255) / 255.0F;
+ «èe€this.alpha = (float)(p_180455_4_ >> 24 & 255) / 255.0F;
+ «ôa€setColor(this.red, this.blue, this.green, this.alpha);
+ «òéthis.posX = p_180455_2_;
+ «¶éthis.posY = p_180455_3_;
+ «¶Õ//Start BetterFonts
+ «¬E€if(betterFontsEnabled && stringCache != null) {
+ »ä‚posX += stringCache.renderString(p_180455_1_, p_180455_2_, p_180455_3_, p_180455_4_, p_180455_5_);
+ «J€©} else {
+ »–5€renderStringAtPos(p_180455_1_,p_180455_5_);
+ «Ü}
+ «ˆÍ//End BetterFonts
+ «¨áreturn (int)this.posX;
+ ›²Õ}
+    }
+
+    /**
+ ¬Y* Returns the width of this string. Equivalent of FontMetrics.stringWidth(String s).
+ .€u€*/
+    public int getStringWidth(String p_78256_1_)
+    {
+ ›üÕ//Start BetterFonts
+ ›¬}if (betterFontsEnabled && stringCache != null) return stringCache.getStringWidth(p_78256_1_);
+ ›@€Í//End BetterFonts
+ ›¨åif (p_78256_1_ == null)
+ ›´{
+ «ˆ­return 0;
+ ›˜}
+ ›ˆ™else
+ ›{
+ «ˆ±int i = 0;
+ «šåboolean flag = false;
+
+ «´=€for (int j = 0; j < p_78256_1_.length(); ++j)
+ «à{
+ »ˆ€char c0 = p_78256_1_.charAt(j);
+ »Ä	€int k = this.getCharWidth(c0);
+
+ »Æ-€if (k < 0 && j < p_78256_1_.length() - 1)
+ »Ø{
+ Ëˆ™++j;
+ Ëùc0 = p_78256_1_.charAt(j);
+
+ Ë¾ñif (c0 != 108 && c0 != 76)
+ Ëº{
+ Ûˆñif (c0 == 114 || c0 == 82)
+ Ûº{
+ ëˆ½flag = false;
+ Û }
+ Ëˆ}
+ Ëˆ™else
+ Ë{
+ Ûˆ¹flag = true;
+ Ë•}
+
+ ËŒ¡k = 0;
+ »’•}
+
+ »Œ­i += k;
+
+ »˜Åif (flag && k > 0)” «²{
+ Ëˆ™++i;
+ »}
+ «ˆ•}
+
+ «Œ­return i;
+ ›˜Õ}
+    }
+
+    /**
+ ¬Q€* Returns the width of this character as rendered.
+ êE€*/
+    public int getCharWidth(char p_78263_1_)
+Œ{
+ ›ôáif (p_78263_1_ == 167)
+ ›²{
+ «ˆ±return -1;
+ ›š}
+ ›ˆñelse if (p_78263_1_ == 32)
+ ›º{
+ «ˆ­return 4;
+ ›˜}
+ ›ˆ™else
+ ›{
+ «ˆ-¡int i = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(p_78263_1_);
+
+ «U€if (p_78263_1_ > 0 && i != -1 && !this.unicodeFlag)
+ «ì{
+ »ˆíreturn this.charWidth[i];
+ «¸}
+ «ˆ1€else if (this.glyphWidth[p_78263_1_] != 0)
+ «Ú{
+ »ˆ1€int j = this.glyphWidth[p_78263_1_] >>> 4;
+ »Ú)€int k = this.glyphWidth[p_78263_1_] & 15;
+œ «è™++k;
+ »åreturn (k - j) / 2 + 1;
+ «´}
+ «ˆ™else
+ «{
+ »ˆ­return 0;
+ «˜}
+ ›ˆÕ}
+    }
+
+    /**
+ ¬1€* Trims a string to fit a specified Width.
+ Úé*/
+    public String trimS%€ToWidth(String p_78269_1_, int p_78269_2_)”{
+ ›(€Ereturn this.trimStringToWidth(p_78269_1_, p_78269_2_, false);
+    }
+
+    /**
+ $€1* Trims a string to a specified width, and will reverse it if par3 is set.
+ €‚*/
+    public String trimStringToWidth(String p_78262_1_, int p_78262_2_, boolean p_78262_3_)
+    {
+ ›P€Õ//Start BetterFonts
+ ›¬i‚if (betterFontsEnabled && stringCache != null) return stringCache.trimStringToWidth(p_78262_1_, p_78262_2_, p_78262_3_);
+ ›v€Í//End BetterFonts
+ ›¨Q€StringBuilder stringbuilder = new StringBuilder();
+ ›ê±int j = 0;
+ ›šM€int k = p_78262_3_ ? p_78262_1_.length() - 1 : 0;
+ ›èùint l = p_78262_3_ ? -1 : 1;
+ ›¾áboolean flag1 = false;
+ ›²éboolean flag2 = false;
+
+ ›¶Ifor (int i1 = k; i1 >= 0 && i1 < p_78262_1_.length() && j < p_78262_2_; i1 += l)
+ ›&€{
+ «ˆ	€char c0 = p_78262_1_.charAt(i1);
+ «Æ€int j1 = this.getCharWidth(c0);
+
+ «È±if (flag1)
+ «š{
+ »ˆÉflag1 = false;
+
+ »¦ñif (c0 != 108 && c0 != 76)
+ »º{
+ Ëˆáif (c0 == 114 || c0 == 82œ ·Ä{
+ ÛˆÁflag2 = false;
+ Ë¢}
+ »ˆ}
+ »ˆ™else
+ »{
+ Ëˆ½flag2 = true;
+ » }
+ «ˆ}
+ «ˆÉelse if (j1 < 0)
+ «¦{
+ »ˆ½flag1 = true;
+ « }
+ «ˆ™else
+ «{
+ »ˆ±j += j1;
+
+ »š±if (flag2)
+ »š{
+ Ëˆ‰++j˜ «–}
+ «ˆ•}
+
+ «ŒÕif (j > p_78262_2_)
+ «¬{
+ »ˆ¡break;
+ «’•}
+
+ «ŒÅif (p_78262_3_)
+ «¤{
+ »ˆùstringbuilder.insert(0, c0);
+ «¾}
+ «ˆ™else
+ «{
+ »ˆístringbuilder.append(c0);
+ «¸}
+ ›ˆ•}
+
+ ›ŒQ€return stringbuilder.toString();
+    }
+
+    /**
+ êq€* Remove all newline characters from the end of the string
+ ú*/
+    private String trimStringNewline(String p_78273_1_)
+    {
+ ›
+€e€while (p_78273_1_ != null && p_78273_1_.endsWith("\n"))
+ ›ô{
+ «ˆp_78273_1_ = p_78273_1_.substring(0, p_78273_1_.length() - 1);
+ ›€•}
+
+ ›Œ€return p_78273_1_;
+    }
+
+    /**
+ Î-* Splits and draws a String with wordwrap (maximum length is parameter k)
+ €‚*/
+    public void drawSplitString(String str, int x, int y, int wrapWidth, int textColor)
+    {
+ ›J€Õthis.resetStyles();
+ ›¬õthis.textColor = textColor;
+ ›¼€str = this.trimStringNewline(str);
+ ›Êy€this.renderSplitString(str, x, y, wrapWidth, false);
+    }
+
+Œ•/**
+ €M‚* Perform actual work of rendering a multi-line string with wordwrap and with darker drop shadow color if flag is
+ h€* set
+ -‚*/
+    private void renderSplitString(String str, int x, int y, int wrapWidth, boolean addShadow)
+    {
+ ›X€List list = this.listFormattedStringToWidth(str, wrapWidth);
+
+ ›€Yfor (Iterator iterator = list.iterator(); iterator.hasNext(); y += this.FONT_HEIGHT)
+ ›.€{
+ «ˆ€String s1 = (String)iterator.next();
+ «Î-this.renderStringAligned(s1, x, y, wrapWidth, this.textColor, addShadow);
+ ›€­}
+    }
+
+Œ•/**
+ ¬=* Returns the width of the wordwrapped String (maximum length is parameter k)
+  €*/
+Œ}€public int splitStringWidth(String p_78267_1_, int p_78267_2_)
+Œ{
+ › €‚return this.FONT_HEIGHT * this.listFormattedStringToWidth(p_78267_1_, p_78267_2_).size();
+    }
+
+Œ•/**
+ \€A‚* Set unicodeFlag controlling whether strings should be rendered with Unicode fonts instead of the default.png
+ b€¥* font.
+ ”]€*/
+    public void setUnicodeFlag(boolean p_78264_1_)
+Œ{
+ › €!€this.unicodeFlag = p_78264_1_;
+    }
+
+Œ•/**
+ æA‚* Get unicodeFlag controlling whether strings should be rendered with Unicode fonts instead of the default.png
+ b€¥* font.
+ ”*/
+Œ!€public boolean getUnicodeFlag()
+    {
+ ›â	€return this.unicodeFlag;
+    }
+
+Œ•/**
+ Ú5‚* Set bidiFlag to control if the Unicode Bidirectional Algorithm should be run before rendering any string.
+ \€…*/”Q€public void setBidiFlag(boolean p_78275_1_)
+    {
+ ›úñthis.bidiFlag = p_78275_1_;
+Œ¹}
+
+    /**
+ à)* Breaks a string into a list of pieces that will fit a specified width.
+ €)*/
+    public List listFormattedStringToWidth(String str, int wrapWidth)
+Œ{
+ ›&€Mreturn Arrays.asList(this.wrapFormattedStringToWidth(str, wrapWidth).split("\n"));
+Œ‰}
+”•/**
+ N€]* Inserts newline and formatting into a string to wrap it within the specified width.
+ 0€5*/
+    String wrapFormattedStringToWidth(String str, int wrapWidth)
+    {
+ ›€M€int j = this.sizeStringToWidth(str, wrapWidth);
+
+ ›èáif (str.length() <= j)
+ ›²{
+ «ˆµreturn str;
+ ›œ}
+ ›ˆ™else
+ ›{
+ «ˆ	€String s1 = str.substring(0, j);
+ «Æéchar c0 = str.charAt(j);
+ «¶€boolean flag = c0 == 32 || c0 == 10;
+ «Î)String s2 = getFormatFromString(s1) + str.substring(j + (flag ? 1 : 0));
+ «€return s1 + "\n" + this.wrapFormattedStringToWidth(s2, wrapWidth);
+ ›
+€Õ}
+    }
+
+    /**
+ ¬U* Determines how many characters from the string will fit into the specified width.
+ ,€%*/
+    private int sizeStringToWidth(String str, int wrapWidth)
+    {
+ ›€Õ//Start BetterFonts
+ ›¬‚if (betterFontsEnabled && stringCache != null) return stringCache.sizeStringToWidth(str, wrapWidth);
+ ›N€Í//End BetterFonts
+ ›¨İint j = str.length();
+ ›°±int k = 0;
+ ›š±int l = 0;
+ ›šÁint i1 = -1;
+
+ ›¢!€for (boolean flag = false; l < j; ++l)
+ ›Ò{
+ «ˆñchar c0 = str.charAt(l);
+
+ «ºµswitch (c0)
+ «œ{
+ »ˆ©case 10:
+ Ë–™--l;
+ Ë¡break;
+ »’­case 167:
+ Ë˜Áif (l < j - 1)
+ Ë¢{
+ Ûˆ™++l;
+ Ûñchar c1 = str.charAt(l);
+
+ Ûºñif (c1 != 108 && c1 != 76)
+ Ûº{
+ ëˆE€if (c1 == 114 || c1 == 82 || isFormatColor(c1))
+ ëä¨ Û˜½flag = false;
+ ë }
+ Ûˆ}” Ë™else
+ Û{
+ ëˆ¹flag = true;
+ Û}
+ Ëˆ•}
+
+ ËŒ¡break;
+ »’©case 32:
+ Ë–¥i1 = l;
+ »”©default:
+ Ë–ık += this.getCharWidth(c0);
+
+ ËÀ­if (flag)
+ Ë˜{
+ Ûˆ™++k;
+ Ë}
+ «ˆ•}
+
+ «Œ½if (c0 == 10)
+ « {
+ »ˆ™++l;
+ »¥i1 = l;
+ »”¡break;
+ «’•}
+
+ «ŒÑif (k > wrapWidth)
+ «ª{
+ »ˆ¡break;
+ «’}
+ ›ˆ•}
+
+ ›Œreturn l != j && i1 != -1 && i1 < l ? i1 : l;
+    }
+
+    /**
+ €-* Checks if the char code is a hexadecimal character, used to set colour.
+ €*/
+    private static boolean isFormatColor(char colorChar)
+    {
+ ›€-ƒreturn colorChar >= 48 && colorChar <= 57 || colorChar >= 97 && colorChar <= 102 || colorChar >= 65 && colorChar <= 70;
+    }
+
+    /**
+ =* Checks if the char code is O-K...lLrRk-o... used to set special formatting.
+  €!*/
+    private static boolean isFormatSpecial(char formatChar)
+    {
+ ›€Mƒreturn formatChar >= 107 && formatChar <= 111 || formatChar >= 75 && formatChar <= 79 || formatChar == 114 || formatChar == 82;
+    }
+
+    /**
+ (E‚* Digests a string for nonprinting formatting characters then returns a string containing only that formatting.
+ d€1*/
+    public static String getFormatFromString(String p_78282_0_)
+    {
+ ›€ÅString s1 = "";
+ ›¤µint i = -1;
+ ›œ€int j = p_78282_0_.length();
+
+ ›ÂQ€while ((i = p_78282_0_.indexOf(167, i + 1)) != -1)
+ ›ê{
+ «ˆÁif (i < j - 1)
+ «¢{
+ »ˆ€char c0 = p_78282_0_.charAt(i + 1);
+
+ »Ğáif (isFormatColor(c0))
+ »²{
+ ËˆÕs1 = "\u00a7" + c0;
+ »¬}
+ »ˆıelse if (isFormatSpecial(c0))
+ »À{
+ Ëˆés1 = s1 + "\u00a7" + c0;
+ »¶}
+ «ˆ}
+ ›ˆ•}
+
+ ›Œùreturn s1;
+    }
+
+    /**
+ ¾=‚* Get bidiFlag that controls if the Unicode Bidirectional Algorithm should be run before rendering any string
+ `€5€*/
+    public boolean getBidiFlag()
+    {
+ ›Ü!‚return this.bidiFlag;
+    }
+
+    protected void setColor(float r, float g, float b, float a)
+    {
+ ›R€IGlStateManager.color(r,g,b,a);
+    }
+
+    protected void enableAlpha()
+    {
+ ›&€)‚GlStateManager.enableAlpha();
+    }
+
+    protected void bindTexture(ResourceLocation location)
+    {
+ ›V€UƒrenderEngine.bindTexture(location);
+    }
+
+    protected InputStream getResourceInputStream(ResourceLocation location) throws IOException
+    {
+ ›,uƒreturn Minecraft.getMinecraft().getResourceManager().getResource(location).getInputStream();
+    }
+
+    public int getColorCode(char p_175064_1_)
+    {
+ ›<!return this.colorCode["0123456789abcdef".indexOf(p_175064_1_)];
+    }
+}GË(Í-~İ±Æ¹ÿ
