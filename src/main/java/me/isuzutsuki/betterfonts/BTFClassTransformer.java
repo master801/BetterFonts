@@ -14,22 +14,22 @@ public final class BTFClassTransformer implements IClassTransformer {
     private static final String PATCH_FILE_PATH = "/patch/FontRenderer.java.bps";
 
     /**
-     * @param arg0 Deobfuscated name (usually the Searge class name)
-     * @param arg1 Obfuscated name
-     * @param arg2 The class' data.
+     * @param obfClassName Obfuscated class name
+     * @param className Deobfuscated name (usually the Searge class name)
+     * @param bytes The class' data.
      *
      * @return The data for the class.
      */
     @Override
-    public byte[] transform(String arg0, String arg1, final byte[] arg2) {
-        if (arg2 == null || arg2.length <= 0) return null;//Check if the class data is valid.
-        byte[] returnData = arg2;
-        if (arg0.equals("net.minecraft.client.gui.FontRenderer")) {
+    public byte[] transform(String obfClassName, String className, final byte[] bytes) {
+        if (bytes == null || bytes.length <= 0) return null;//Check if the class data is valid.
+        byte[] returnData = bytes;
+        if (className.equals("net.minecraft.client.gui.FontRenderer")) {
             BetterFontsCore.BETTER_FONTS_LOGGER.info("Patching class \"{}\"...", arg0);
-            returnData = beatPatch(arg0, arg2);
+            returnData = beatPatch(className, bytes);
         }
         if (returnData == null || returnData.length <= 0) {//Patching failed
-            returnData = arg2;
+            returnData = bytes;
             BetterFontsCore.BETTER_FONTS_LOGGER.error("Failed to patch class \"{}\".");
         }
         return returnData;
