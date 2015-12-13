@@ -1,15 +1,17 @@
 plugins {
-    id "net.minecraftforge.gradle.forge" version project.properties.get("forge_gradle_version")
+    id "net.minecraftforge.gradle.forge" version '2.0.2'
 }
 
-version = project.properties.get("version")
+version = project.properties['version']
 group = "me.isuzutsuki"
 archivesBaseName = 'BetterFonts'
 
 minecraft {
-    version = project.properties.get("forge_version")
+    version = project.properties['forge_version']
     runDir = 'run'
-    mappings = project.properties.get("mcp_snapshot")
+    mappings = project.properties['mcp_snapshot']
+
+    replace '@VERSION@', project.version
 }
 
 processResources {
