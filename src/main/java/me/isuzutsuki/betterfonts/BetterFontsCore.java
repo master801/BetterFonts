@@ -5,7 +5,6 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.MCVersion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.util.Map;
 
 @MCVersion("1.8")

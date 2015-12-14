@@ -25,14 +25,8 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     }
 
     @Override
-    protected String getClassName(TransformationType transformationType) {
-        switch(transformationType) {
-            case UNTRANSFORMED:
-                return "bty";
-            case TRANSFORMED:
-            default:
-                return "net.minecraft.client.gui.FontRenderer";
-        }
+    protected String getClassName(boolean transformed) {
+        return transformed ? "bty" : "net.minecraft.client.gui.FontRenderer";
     }
 
     @Override
@@ -41,51 +35,44 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     }
 
     @Override
-    public byte[] transform(String s, String s1, byte[] bytes) {
-        return super.transform(bytes, s, s1);
+    public byte[] transform(String s, String s1, final byte[] bytes) {
+        byte[] returnBytes;
+        try {
+            returnBytes = super.transform(bytes, s, s1);
+        } catch(Exception e) {
+            returnBytes = bytes;
+            getLogger().error("Caught an exception while transforming! Transformer: \"{}\", Exception: \"{}\"", this, e);
+        }
+        return returnBytes;
     }
 
     @SuppressWarnings("unused")
     private static final class Internal {
 
-        @SubstitutionField(value = Transcendent.ADD, names = {}, desc = boolean.class)
+        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
         public static boolean betterFontsEnabled = true;
 
-        @SubstitutionField(value = Transcendent.ADD, names = {}, desc = StringCache.class)
+        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
         public StringCache stringCache;
 
-        @SubstitutionField(value = Transcendent.ADD, names = {}, desc = boolean.class)
+        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
         public boolean dropShadowEnabled = true;
 
-        @SubstitutionField(value = Transcendent.ADD, names = {}, desc = boolean.class)
+        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
         public boolean enabled = true;
 
         //<editor-fold desc="Internal">
-        @SubstitutionField(value = Transcendent.INVISIBLE, names = {
-                "field_78295_j",
-                "posX"
-        }, desc = int.class)
+        @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_78295_j", unobfuscatedName = "posX")
         private int posX;
 
-        @SubstitutionField(value = Transcendent.INVISIBLE, names = {
-                "field_111273_g",
-                "locationFontTexture"
-        }, desc = ResourceLocation.class)
+        @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_111273_g", unobfuscatedName = "locationFontTexture")
         ResourceLocation locationFontTexture;
 
-        @SubstitutionField(value = Transcendent.INVISIBLE, names = {
-                "field_78285_g",
-                "colorCode"
-        }, desc = int[].class)
+        @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_78285_g", unobfuscatedName = "colorCode")
         int[] colorCode;
         //</editor-fold>
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {}, desc = {
-                GameSettings.class,
-                ResourceLocation.class,
-                TextureManager.class,
-                boolean.class
-        })
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "", unobfuscatedName = "")
         public Internal(GameSettings par1, ResourceLocation par2, TextureManager par3, boolean par4) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING, -1);
             BetterFontsCore.BETTER_FONTS_LOGGER.info("Starting BetterFonts...");
@@ -108,10 +95,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             Substitution.endAdditionalInstructions();
         }
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {
-                "func_147647_b",
-                "bidiReorder"
-        }, desc = String.class)
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_147647_b", unobfuscatedName = "bidiReorder")
         private String bidiReorder(String par1) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING);
             if (Internal.betterFontsEnabled && stringCache != null) return par1;
@@ -119,35 +103,23 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             return null;
         }
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {
-                "func_180455_b",
-                "renderString"
-        }, desc = {
-                String.class,
-                float.class,
-                float.class,
-                int.class,
-                boolean.class
-        })
-        private int renderString(String p_180455_1_, float p_180455_2_, float p_180455_3_, int p_180455_4_, boolean p_180455_5_) {
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_180455_b", unobfuscatedName = "renderString")
+        private int renderString(String par1, float par2, float par3, int oar4, boolean par5) {
             Substitution.startRemoval();
-            renderStringAtPos(p_180455_1_, p_180455_5_);
+            renderStringAtPos(par1, par5);
             Substitution.endRemoval();
 
             Substitution.startAdditionalInstructions(Insertion.ENDING);
             if(betterFontsEnabled && stringCache != null) {
-                posX += stringCache.renderString(p_180455_1_, p_180455_2_, p_180455_3_, p_180455_4_, p_180455_5_);
+                posX += stringCache.renderString(par1, par2, par3, oar4, par5);
             } else {
-                renderStringAtPos(p_180455_1_,p_180455_5_);
+                renderStringAtPos(par1,par5);
             }
             Substitution.endAdditionalInstructions();
             return -1;
         }
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {
-                "func_78256_a",
-                "getStringWidth"
-        }, desc = String.class)
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_78256_a", unobfuscatedName = "getStringWidth")
         public int getStringWidth(String par1) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING);
             if (Internal.betterFontsEnabled && stringCache != null) return stringCache.getStringWidth(par1);//First index
@@ -155,14 +127,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             return -1;
         }
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {
-                "func_78262_a",
-                "trimStringToWidth"
-        }, desc = {
-                String.class,
-                int.class,
-                boolean.class
-        })
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_78262_a", unobfuscatedName = "trimStringToWidth")
         public String trimStringToWidth(String par1, int par2, boolean par3) {
             Substitution.startAdditionalInstructions(Insertion.ENDING);
             if (Internal.betterFontsEnabled && stringCache != null) return stringCache.trimStringToWidth(par1, par2, par3);//First index
@@ -170,13 +135,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             return null;
         }
 
-        @SubstitutionMethod(value = Transcendent.MERGE, names = {
-                "func_78259_e",
-                "sizeStringToWidth"
-        }, desc = {
-                String.class,
-                int.class
-        })
+        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_78259_e", unobfuscatedName = "sizeStringToWidth")
         private int sizeStringToWidth(String par1, int par2) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING);
             if (Internal.betterFontsEnabled && stringCache != null) return stringCache.sizeStringToWidth(par1, par2);//First index
@@ -185,13 +144,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         }
 
         //<editor-fold desc="Internal">
-        @SubstitutionMethod(value = Transcendent.INVISIBLE, names = {
-                "func_78255_a",
-                "renderStringAtPos"
-        }, desc = {
-                String.class,
-                boolean.class
-        })
+        @SubstitutionMethod(value = Transcendent.INVISIBLE, obfuscatedName = "func_78255_a", unobfuscatedName = "renderStringAtPos")
         private void renderStringAtPos(String par1, boolean par2) {
         }
         //</editor-fold>
