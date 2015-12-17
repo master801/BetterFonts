@@ -6,6 +6,15 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.launchwrapper.IClassTransformer;
 import net.minecraft.util.ResourceLocation;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.slave.lib.api.asm.substitution.Substitution;
 import org.slave.lib.api.asm.substitution.Substitution.Insertion;
 import org.slave.lib.api.asm.substitution.SubstitutionAnnotations.SubstitutionField;
@@ -25,8 +34,55 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     }
 
     @Override
-    protected String getClassName(boolean transformed) {
-        return transformed ? "bty" : "net.minecraft.client.gui.FontRenderer";
+    protected String getClassName(boolean isNameTransformed) {
+        return isNameTransformed ? "bty" : "net.minecraft.client.gui.FontRenderer";
+    }
+
+    @Override
+    protected void fixUp(ClassNode classNode) throws Exception {
+        final int access = Opcodes.ACC_PUBLIC;
+        final String[] methodNames = new String[] {
+                "func_175065_a",//Obfuscated
+                "drawString"//Deobfuscated
+        };
+        final String methodDesc = Type.getMethodDescriptor(Type.INT_TYPE, Type.getType(String.class), Type.FLOAT_TYPE, Type.FLOAT_TYPE, Type.INT_TYPE, Type.BOOLEAN_TYPE);
+
+        MethodNode searching = null;
+
+        MAIN:
+        for(MethodNode methodNode : classNode.methods) {
+            if (methodNode.access == access && methodNode.desc.equals(methodDesc)) {
+                for(String methodName : methodNames) {
+                    if (methodName.equals(methodNode.name)) {
+                        searching = methodNode;
+                        break MAIN;
+                    }
+                }
+            }
+        }
+
+        //Adds a dropShadowEnabled check to the if statement in method drawString(Ljava/lang/String;FFIZ)I
+        /**
+         * TODO
+         *
+         * Make {@link Substitution#startRemoval()} support removing if statements.
+         *
+         * Or at the very least make something support adding checks to an if statement (and some other supported statements).
+         */
+        if (searching != null) {
+            for(int i = 0; i < searching.instructions.size(); ++i) {
+                AbstractInsnNode abstractInsnNode = searching.instructions.get(i);
+                if (abstractInsnNode instanceof JumpInsnNode && abstractInsnNode.getOpcode() == Opcodes.IFEQ) {
+                    JumpInsnNode jump = (JumpInsnNode)abstractInsnNode;
+                    InsnList insert = new InsnList();
+                    insert.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                    insert.add(new FieldInsnNode(Opcodes.GETFIELD, classNode.name, "dropShadowEnabled", "Z"));
+                    insert.add(new JumpInsnNode(Opcodes.IFEQ, jump.label));
+                    searching.instructions.insert(jump, insert);
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -50,31 +106,33 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     private static final class Internal {
 
         @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
-        public static boolean betterFontsEnabled = true;
+        public static boolean betterFontsEnabled;
 
         @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
         public StringCache stringCache;
 
         @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
-        public boolean dropShadowEnabled = true;
+        public boolean dropShadowEnabled;
 
         @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
-        public boolean enabled = true;
+        public boolean enabled;
 
         //<editor-fold desc="Internal">
         @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_78295_j", unobfuscatedName = "posX")
-        private int posX;
+        protected float posX;
 
         @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_111273_g", unobfuscatedName = "locationFontTexture")
-        ResourceLocation locationFontTexture;
+        protected ResourceLocation locationFontTexture;
 
         @SubstitutionField(value = Transcendent.INVISIBLE, obfuscatedName = "field_78285_g", unobfuscatedName = "colorCode")
-        int[] colorCode;
+        private int[] colorCode;
         //</editor-fold>
 
         @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "", unobfuscatedName = "")
         public Internal(GameSettings par1, ResourceLocation par2, TextureManager par3, boolean par4) {
-            Substitution.startAdditionalInstructions(Insertion.BEGINNING, -1);
+            Substitution.startAdditionalInstructions(Insertion.BEGINNING, 1);
+
+            dropShadowEnabled = enabled = Internal.betterFontsEnabled = true;//Manually set variables in constructor
             BetterFontsCore.BETTER_FONTS_LOGGER.info("Starting BetterFonts...");
             if (locationFontTexture.getResourcePath().equalsIgnoreCase("textures/font/ascii.png") && stringCache == null) {
                 //Read optional config file to override the default font name/size
@@ -104,14 +162,14 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         }
 
         @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "func_180455_b", unobfuscatedName = "renderString")
-        private int renderString(String par1, float par2, float par3, int oar4, boolean par5) {
+        private int renderString(String par1, float par2, float par3, int par4, boolean par5) {
             Substitution.startRemoval();
             renderStringAtPos(par1, par5);
             Substitution.endRemoval();
 
             Substitution.startAdditionalInstructions(Insertion.ENDING);
             if(betterFontsEnabled && stringCache != null) {
-                posX += stringCache.renderString(par1, par2, par3, oar4, par5);
+                posX += stringCache.renderString(par1, par2, par3, par4, par5);
             } else {
                 renderStringAtPos(par1,par5);
             }
