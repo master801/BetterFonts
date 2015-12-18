@@ -2,14 +2,14 @@ package me.isuzutsuki.betterfonts;
 
 public final class BTFThaiUtils {
 
-    public static boolean isThaiChar(char par1)
+    public static boolean isThaiChar(char character)
     {
-        return BTFThaiUtils.getUnicodeFromChar(par1) >= 7009 && BTFThaiUtils.getUnicodeFromChar(par1) <= 7099;
+        return BTFThaiUtils.getUnicodeFromChar(character) >= 7009 && BTFThaiUtils.getUnicodeFromChar(character) <= 7099;
     }
 
-    public static int getUnicodeFromChar(char par1)
+    public static int getUnicodeFromChar(char character)
     {
-        return (int)par1 + 3424;
+        return (int)character + 3424;
     }
 
 }

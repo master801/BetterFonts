@@ -1,28 +1,22 @@
-package me.isuzutsuki.betterfonts.betterfonts;
-
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.nio.IntBuffer;
-import java.nio.ByteOrder;
-import java.nio.ByteBuffer;
-import java.awt.image.BufferedImage;
-import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
-import java.awt.geom.Point2D;
-import java.awt.Graphics2D;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.RenderingHints;
-import java.awt.Rectangle;
-import java.awt.AlphaComposite;
-import java.awt.GraphicsEnvironment;
+package me.isuzutsuki.betterfonts.rendering.glyph;
 
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * The GlyphCache class is responsible for caching pre-rendered images of every glyph using OpenGL textures. This class is also
@@ -36,8 +30,8 @@ import org.lwjgl.opengl.GL11;
  * @todo Need to have a config file that allows overring the font search order by locale to properly support Traditional Chinese
  * hanzi, Simplified Chinese hanzi, Japanese kanji, and Korean hanja
  */
-public class GlyphCache
-{
+public final class GlyphCache {
+
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
@@ -112,7 +106,7 @@ public class GlyphCache
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font. This list starts with Java's "SansSerif" logical
      * font.
      */
-    private List<Font> usedFonts = new ArrayList();
+    private List<Font> usedFonts = new ArrayList<>();
 
 
     /** ID of current OpenGL cache texture being used by cacheGlyphs() to store pre-rendered glyph images. */
@@ -123,14 +117,14 @@ public class GlyphCache
      * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
      * of the same font family like bold or italic.
      */
-    private LinkedHashMap<Font, Integer> fontCache = new LinkedHashMap();
+    private LinkedHashMap<Font, Integer> fontCache = new LinkedHashMap<>();
 
     /**
      * A cache of pre-rendered glyphs mapping each glyph by its glyphcode to the position of its pre-rendered image within
      * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyphcode and the upper 32 are the
      * index of the font in the fontCache. This makes for a single globally unique number to identify any glyph from any font.
      */
-    private LinkedHashMap<Long, Entry> glyphCache = new LinkedHashMap();
+    private LinkedHashMap<Long, Entry> glyphCache = new LinkedHashMap<>();
 
 
     /**
@@ -153,34 +147,6 @@ public class GlyphCache
       * cachePosY will get incremented when the current horizontal line in the texture fills up.
       */
     private int cacheLineHeight = 0;
-
-    /**
-     * This class holds information for a glyph about its pre-rendered image in an OpenGL texture. The texture coordinates in
-     * this class are normalized in the standard 0.0 - 1.0 OpenGL range.
-     */
-    static class Entry
-    {
-        /** The OpenGL texture ID that contains this glyph image. */
-        public int textureName;
-
-        /** The width in pixels of the glyph image. */
-        public int width;
-
-        /** The height in pixels of the glyph image. */
-        public int height;
-
-        /** The horizontal texture coordinate of the upper-left corner. */
-        public float u1;
-
-        /** The vertical texture coordinate of the upper-left corner. */
-        public float v1;
-
-        /** The horizontal texture coordinate of the lower-right corner. */
-        public float u2;
-
-        /** The vertical texture coordinate of the lower-right corner. */
-        public float v2;
-    }
 
     /**
      * A single instance of GlyphCache is allocated for internal use by the StringCache class.
@@ -209,8 +175,7 @@ public class GlyphCache
      * @param name the new font name
      * @param size the new point size
      */
-    void setDefaultFont(String name, int size, boolean antiAlias)
-    {
+    public void setDefaultFont(String name, int size, boolean antiAlias) {
         System.out.println("BetterFonts loading font \"" + name + "\"");
         usedFonts.clear();
         usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
@@ -230,11 +195,9 @@ public class GlyphCache
      * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT
      * @return the newly created GlyphVector
      */
-    GlyphVector layoutGlyphVector(Font font, char text[], int start, int limit, int layoutFlags)
-    {
+    public GlyphVector layoutGlyphVector(Font font, char text[], int start, int limit, int layoutFlags) {
         /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
-        if(!fontCache.containsKey(font))
-        {
+        if(!fontCache.containsKey(font)) {
             fontCache.put(font, fontCache.size());
         }
         return font.layoutGlyphVector(fontRenderContext, text, start, limit, layoutFlags);
@@ -250,7 +213,7 @@ public class GlyphCache
      * @param style combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @return an OpenType font capable of displaying at least the first character at the start position in text
      */
-    Font lookupFont(char text[], int start, int limit, int style)
+    public Font lookupFont(char text[], int start, int limit, int style)
     {
         /* Try using an already known base font; the first font in usedFonts list is the one set with setDefaultFont() */
         Iterator<Font> iterator = usedFonts.iterator();
@@ -299,7 +262,7 @@ public class GlyphCache
      * @param glyphCode the font specific flyph code to lookup in the cache
      * @return the cache entry for this font/glyphCode pair
      */
-    Entry lookupGlyph(Font font, int glyphCode)
+    public Entry lookupGlyph(Font font, int glyphCode)
     {
         long fontKey = (long) fontCache.get(font) << 32;
         return glyphCache.get(fontKey | glyphCode);
@@ -318,7 +281,7 @@ public class GlyphCache
      *
      * @todo May need a blank border of pixels around everything for mip-map/tri-linear filtering with Optifine
      */
-    void cacheGlyphs(Font font, char text[], int start, int limit, int layoutFlags)
+    public void cacheGlyphs(Font font, char text[], int start, int limit, int layoutFlags)
     {
         /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting caller */
         GlyphVector vector = layoutGlyphVector(font, text, start, limit, layoutFlags);

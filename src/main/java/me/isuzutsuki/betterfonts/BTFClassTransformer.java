@@ -1,7 +1,7 @@
 package me.isuzutsuki.betterfonts;
 
-import me.isuzutsuki.betterfonts.betterfonts.ConfigParser;
-import me.isuzutsuki.betterfonts.betterfonts.StringCache;
+import me.isuzutsuki.betterfonts.rendering.ConfigParser;
+import me.isuzutsuki.betterfonts.rendering.string.StringCache;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.launchwrapper.IClassTransformer;
@@ -60,8 +60,6 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
                 }
             }
         }
-
-        //Adds a dropShadowEnabled check to the if statement in method drawString(Ljava/lang/String;FFIZ)I
         /**
          * TODO
          *
@@ -69,6 +67,9 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
          *
          * Or at the very least make something support adding checks to an if statement (and some other supported statements).
          */
+
+
+        //Adds a dropShadowEnabled check to the if statement in method drawString(Ljava/lang/String;FFIZ)I
         if (searching != null) {
             for(int i = 0; i < searching.instructions.size(); ++i) {
                 AbstractInsnNode abstractInsnNode = searching.instructions.get(i);

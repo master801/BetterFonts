@@ -1,4 +1,4 @@
-package me.isuzutsuki.betterfonts.betterfonts;
+package me.isuzutsuki.betterfonts.rendering;
 
 import me.isuzutsuki.betterfonts.BetterFontsCore;
 import net.minecraft.client.Minecraft;
@@ -12,10 +12,16 @@ import java.util.Properties;
  * default font name and font point size used for string rendering, but it is not needed for normal operation of the
  * StringCache and GlyphCache classes.
  */
-public class ConfigParser
+public final class ConfigParser
 {
     /** Java's logical font names that can always be used inside the font.name property of the configuration file. */
-    private static final String LOGICAL_FONTS[] = { "Serif", "SansSerif", "Dialog", "DialogInput", "Monospaced" };
+    private static final String LOGICAL_FONTS[] = {
+            "Serif",
+            "SansSerif",
+            "Dialog",
+            "DialogInput",
+            "Monospaced"
+    };
 
     /** List of all fonts on the system + logical font names; used for checking if font.name in the config file is valid. */
     private Font allFonts[] = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
