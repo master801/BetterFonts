@@ -1,6 +1,5 @@
 package me.isuzutsuki.betterfonts;
 
-import me.isuzutsuki.betterfonts.rendering.ConfigParser;
 import me.isuzutsuki.betterfonts.rendering.string.StringCache;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.settings.GameSettings;
@@ -48,27 +47,17 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         final String methodDesc = Type.getMethodDescriptor(Type.INT_TYPE, Type.getType(String.class), Type.FLOAT_TYPE, Type.FLOAT_TYPE, Type.INT_TYPE, Type.BOOLEAN_TYPE);
 
         MethodNode searching = null;
-
-        MAIN:
         for(MethodNode methodNode : classNode.methods) {
             if (methodNode.access == access && methodNode.desc.equals(methodDesc)) {
                 for(String methodName : methodNames) {
                     if (methodName.equals(methodNode.name)) {
                         searching = methodNode;
-                        break MAIN;
+                        break;
                     }
                 }
             }
+            if (searching != null) break;
         }
-        /**
-         * TODO
-         *
-         * Make {@link Substitution#startRemoval()} support removing if statements.
-         *
-         * Or at the very least make something support adding checks to an if statement (and some other supported statements).
-         */
-
-
         //Adds a dropShadowEnabled check to the if statement in method drawString(Ljava/lang/String;FFIZ)I
         if (searching != null) {
             for(int i = 0; i < searching.instructions.size(); ++i) {
@@ -87,15 +76,15 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     }
 
     @Override
-    protected boolean writeAsmFile() {
+    protected boolean writeClassFile() {
         return true;
     }
 
     @Override
-    public byte[] transform(String s, String s1, final byte[] bytes) {
+    public byte[] transform(String untransformedName, String transformedName, final byte[] bytes) {
         byte[] returnBytes;
         try {
-            returnBytes = super.transform(bytes, s, s1);
+            returnBytes = super.transform(bytes, untransformedName, transformedName);
         } catch(Exception e) {
             returnBytes = bytes;
             getLogger().error("Caught an exception while transforming! Transformer: \"{}\", Exception: \"{}\"", this, e);
@@ -133,7 +122,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         public Internal(GameSettings par1, ResourceLocation par2, TextureManager par3, boolean par4) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING, 1);
 
-            dropShadowEnabled = enabled = Internal.betterFontsEnabled = true;//Manually set variables in constructor
+            Internal.betterFontsEnabled = (dropShadowEnabled = enabled = true);//Manually set variables in constructor
             BetterFontsCore.BETTER_FONTS_LOGGER.info("Starting BetterFonts...");
             if (locationFontTexture.getResourcePath().equalsIgnoreCase("textures/font/ascii.png") && stringCache == null) {
                 //Read optional config file to override the default font name/size
@@ -169,7 +158,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             Substitution.endRemoval();
 
             Substitution.startAdditionalInstructions(Insertion.ENDING);
-            if(betterFontsEnabled && stringCache != null) {
+            if(Internal.betterFontsEnabled && stringCache != null) {
                 posX += stringCache.renderString(par1, par2, par3, par4, par5);
             } else {
                 renderStringAtPos(par1,par5);

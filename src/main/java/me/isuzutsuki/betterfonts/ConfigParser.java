@@ -1,6 +1,5 @@
-package me.isuzutsuki.betterfonts.rendering;
+package me.isuzutsuki.betterfonts;
 
-import me.isuzutsuki.betterfonts.BetterFontsCore;
 import net.minecraft.client.Minecraft;
 
 import java.awt.*;
@@ -132,7 +131,7 @@ public final class ConfigParser
              * font. Always prefer to partial match the shortest possible font face name to match "Times New Roman" before
              * "Times New Roman Bold" for instance.
              */
-            if ((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().indexOf(searchName) != -1) {
+            if ((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().contains(searchName)) {
                 if (partialMatch == null || partialMatch.length() > font.getName().length()) {
                     partialMatch = font.getName();
                 }

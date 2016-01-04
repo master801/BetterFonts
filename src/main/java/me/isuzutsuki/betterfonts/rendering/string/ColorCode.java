@@ -8,12 +8,12 @@ final class ColorCode implements Comparable<Integer> {
     /**
      * Bit flag used with renderStyle to request the underline style
      */
-    public static final byte UNDERLINE = 1;
+    public static final byte UNDERLINE = (byte)1;
 
     /**
      * Bit flag used with renderStyle to request the strikethrough style
      */
-    public static final byte STRIKETHROUGH = 2;
+    public static final byte STRIKE_THROUGH = (byte)2;
 
     /**
      * The index into the original string (i.e. with color codes) for the location of this color code.

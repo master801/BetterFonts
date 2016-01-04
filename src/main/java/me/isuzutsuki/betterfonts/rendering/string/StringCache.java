@@ -350,7 +350,7 @@ public final class StringCache {
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
-                if ((renderStyle & ColorCode.STRIKETHROUGH) != 0) {
+                if ((renderStyle & ColorCode.STRIKE_THROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
                     float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
@@ -649,7 +649,7 @@ public final class StringCache {
 
                 /* Strikethrough style */
                 case 18:
-                    renderStyle |= ColorCode.STRIKETHROUGH;
+                    renderStyle |= ColorCode.STRIKE_THROUGH;
                     cacheEntry.specialRender = true;
                     break;
 
