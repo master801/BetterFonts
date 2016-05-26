@@ -1,0 +1,10 @@
+#IDEA Workspace
+/build
+/run
+/out
+*.iml
+*.ipr
+*.iws
+
+#Gradle
+/.gradle

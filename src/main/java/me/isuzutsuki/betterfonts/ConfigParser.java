@@ -69,7 +69,10 @@ public final class ConfigParser
         }
         catch(IOException | IllegalArgumentException e)
         {
-            BetterFontsCore.BETTER_FONTS_LOGGER.error(e);
+            BetterFontsCore.BETTER_FONTS_LOGGER.error(
+                    "Caught an exception while loading the config file!",
+                    e
+            );
         }
 
         return success;

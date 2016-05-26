@@ -50,6 +50,7 @@ final class Key {
      *
      * @return true if the strings are the identical, or only differ in their ASCII digits
      */
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
         /*

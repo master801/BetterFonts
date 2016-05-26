@@ -44,7 +44,14 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
                 "func_175065_a",//Obfuscated
                 "drawString"//Deobfuscated
         };
-        final String methodDesc = Type.getMethodDescriptor(Type.INT_TYPE, Type.getType(String.class), Type.FLOAT_TYPE, Type.FLOAT_TYPE, Type.INT_TYPE, Type.BOOLEAN_TYPE);
+        final String methodDesc = Type.getMethodDescriptor(
+                Type.INT_TYPE,
+                Type.getType(String.class),
+                Type.FLOAT_TYPE,
+                Type.FLOAT_TYPE,
+                Type.INT_TYPE,
+                Type.BOOLEAN_TYPE
+        );
 
         MethodNode searching = null;
         for(MethodNode methodNode : classNode.methods) {
@@ -65,10 +72,23 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
                 if (abstractInsnNode instanceof JumpInsnNode && abstractInsnNode.getOpcode() == Opcodes.IFEQ) {
                     JumpInsnNode jump = (JumpInsnNode)abstractInsnNode;
                     InsnList insert = new InsnList();
-                    insert.add(new VarInsnNode(Opcodes.ALOAD, 0));
-                    insert.add(new FieldInsnNode(Opcodes.GETFIELD, classNode.name, "dropShadowEnabled", "Z"));
-                    insert.add(new JumpInsnNode(Opcodes.IFEQ, jump.label));
-                    searching.instructions.insert(jump, insert);
+                    insert.add(new VarInsnNode(
+                            Opcodes.ALOAD,
+                            0
+                    ));
+                    insert.add(new FieldInsnNode(
+                            Opcodes.GETFIELD,
+                            classNode.name,
+                            "dropShadowEnabled",
+                            "Z"
+                    ));
+                    insert.add(new JumpInsnNode(
+                            Opcodes.IFEQ,
+                            jump.label
+                    ));
+                    searching.instructions.insert(
+                            jump,
+                            insert);
                     break;
                 }
             }
@@ -95,16 +115,16 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     @SuppressWarnings("unused")
     private static final class Internal {
 
-        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
+        @SubstitutionField(value = Transcendent.ADD)
         public static boolean betterFontsEnabled;
 
-        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
+        @SubstitutionField(value = Transcendent.ADD)
         public StringCache stringCache;
 
-        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
+        @SubstitutionField(value = Transcendent.ADD)
         public boolean dropShadowEnabled;
 
-        @SubstitutionField(value = Transcendent.ADD, obfuscatedName = "", unobfuscatedName = "")
+        @SubstitutionField(value = Transcendent.ADD)
         public boolean enabled;
 
         //<editor-fold desc="Internal">
@@ -118,7 +138,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         private int[] colorCode;
         //</editor-fold>
 
-        @SubstitutionMethod(value = Transcendent.MERGE, obfuscatedName = "", unobfuscatedName = "")
+        @SubstitutionMethod(value = Transcendent.MERGE)
         public Internal(GameSettings par1, ResourceLocation par2, TextureManager par3, boolean par4) {
             Substitution.startAdditionalInstructions(Insertion.BEGINNING, 1);
 

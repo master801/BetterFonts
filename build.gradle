@@ -6,12 +6,21 @@ version = project.properties['version']
 group = "me.isuzutsuki"
 archivesBaseName = 'BetterFonts'
 
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
 minecraft {
     version = project.properties['forge_version']
     runDir = 'run'
     mappings = project.properties['mcp_snapshot']
 
     replace '@VERSION@', project.version
+}
+
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version: project.properties['sl4j-version']
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: project.properties['log4j-version']
+    compile group: 'com.github.pwittchen.kirai', name: 'library', version: project.properties['kirari-version']
 }
 
 processResources {

@@ -175,7 +175,8 @@ public final class GlyphCache {
      * @param name the new font name
      * @param size the new point size
      */
-    public void setDefaultFont(String name, int size, boolean antiAlias) {
+    public void setDefaultFont(String name, int size, boolean antiAlias)
+    {
         System.out.println("BetterFonts loading font \"" + name + "\"");
         usedFonts.clear();
         usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
@@ -195,7 +196,8 @@ public final class GlyphCache {
      * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT
      * @return the newly created GlyphVector
      */
-    public GlyphVector layoutGlyphVector(Font font, char text[], int start, int limit, int layoutFlags) {
+    public GlyphVector layoutGlyphVector(Font font, char text[], int start, int limit, int layoutFlags)
+    {
         /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
         if(!fontCache.containsKey(font)) {
             fontCache.put(font, fontCache.size());
