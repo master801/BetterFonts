@@ -3,7 +3,7 @@ plugins {
 }
 
 version = project.properties['version']
-group = "me.isuzutsuki"
+group = 'me.isuzutsuki'
 archivesBaseName = 'BetterFonts'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
@@ -17,15 +17,32 @@ minecraft {
     replace '@VERSION@', project.version
 }
 
+jar {
+    manifest {
+        attributes 'Created-By': 'Master801'
+        attributes 'FMLCorePlugin': 'me.isuzutsuki.betterfonts.BetterFontsCore'
+    }
+}
+
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version: project.properties['sl4j-version']
     compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: project.properties['log4j-version']
     compile group: 'com.github.pwittchen.kirai', name: 'library', version: project.properties['kirari-version']
+
+    compile fileTree(
+            dir: 'libs',
+            exclude: '*-src.jar',
+            include: [
+                    'Slave-Lib-Minecraft-' + project.properties['slave-lib_version'] + '.jar',
+                    'Slave-Lib-IO-' + project.properties['slave-lib_version'] + '.jar',
+                    'Slave-Lib-Minecraft-ASM-' + project.properties['slave-lib_version'] + '.jar'
+            ]
+    )
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
         expand 'version':project.version, 'mcversion':project.minecraft.version

@@ -1,4 +1,4 @@
-#IDEA Workspace
+#Workspace
 /build
 /run
 /out
@@ -6,5 +6,10 @@
 *.ipr
 *.iws
 
+#Misc
+
 #Gradle
 /.gradle
+
+#Garbage
+Thumbs.db
