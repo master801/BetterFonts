@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 @Name("BetterFonts")
-@MCVersion("1.8")
+@MCVersion("1.8.9")
 @TransformerExclusions("me.isuzutsuki.betterfonts.rendering.")
 public final class BetterFontsCore implements IFMLLoadingPlugin {
 

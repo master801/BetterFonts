@@ -4,9 +4,12 @@ import me.isuzutsuki.betterfonts.rendering.glyph.Glyph;
 import me.isuzutsuki.betterfonts.rendering.glyph.GlyphCache;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
+import java.awt.Font;
+import java.awt.Point;
 import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
 import java.text.Bidi;
@@ -238,8 +241,12 @@ public final class StringCache {
 
         /* Using the Tessellator to queue up data in a vertex array and then draw all at once should be faster than immediate mode */
         Tessellator tessellator = Tessellator.getInstance();
-        tessellator.getWorldRenderer().startDrawingQuads();
-        tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
+        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+//        worldRenderer.startDrawingQuads();
+
+        //FIXME
+        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        GlStateManager.color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
 
         /* The currently active font syle is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = Font.PLAIN;
@@ -285,8 +292,10 @@ public final class StringCache {
             //if(true)
             {
                 tessellator.draw();
-                tessellator.getWorldRenderer().startDrawingQuads();
-                tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
+//                worldRenderer.startDrawingQuads();
+                //FIXME
+                worldRenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION_TEX);
+                GlStateManager.color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
 
                 GlStateManager.bindTexture(texture.textureName);
                 boundTextureName = texture.textureName;
@@ -298,10 +307,10 @@ public final class StringCache {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            tessellator.getWorldRenderer().addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
-            tessellator.getWorldRenderer().addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
-            tessellator.getWorldRenderer().addVertexWithUV(x2, y2, 0, texture.u2, texture.v2);
-            tessellator.getWorldRenderer().addVertexWithUV(x2, y1, 0, texture.u2, texture.v1);
+            worldRenderer.pos(x1, y1, 0).tex(texture.u1, texture.v1).endVertex();
+            worldRenderer.pos(x1, y2, 0).tex(texture.u1, texture.v2).endVertex();
+            worldRenderer.pos(x2, y2, 0).tex(texture.u2, texture.v2).endVertex();
+            worldRenderer.pos(x2, y1, 0).tex(texture.u2, texture.v1).endVertex();
         }
 
         /* Draw any remaining glyphs in the Tessellator's vertex array (there should be at least one glyph pending) */
@@ -314,8 +323,10 @@ public final class StringCache {
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             color = initialColor;
             GlStateManager.disableTexture2D();
-            tessellator.getWorldRenderer().startDrawingQuads();
-            tessellator.getWorldRenderer().setColorRGBA(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
+//            worldRenderer.startDrawingQuads();
+            //FIXME
+            worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+            GlStateManager.color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
 
             for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*
@@ -343,10 +354,10 @@ public final class StringCache {
                     float y1 = startY + (UNDERLINE_OFFSET) / 2.0F;
                     float y2 = startY + (UNDERLINE_OFFSET + UNDERLINE_THICKNESS) / 2.0F;
 
-                    tessellator.getWorldRenderer().addVertex(x1, y1, 0);
-                    tessellator.getWorldRenderer().addVertex(x1, y2, 0);
-                    tessellator.getWorldRenderer().addVertex(x2, y2, 0);
-                    tessellator.getWorldRenderer().addVertex(x2, y1, 0);
+                    worldRenderer.pos(x1, y1, 0).endVertex();
+                    worldRenderer.pos(x1, y2, 0).endVertex();
+                    worldRenderer.pos(x2, y2, 0).endVertex();
+                    worldRenderer.pos(x2, y1, 0).endVertex();
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
@@ -357,10 +368,10 @@ public final class StringCache {
                     float y1 = startY + (STRIKETHROUGH_OFFSET) / 2.0F;
                     float y2 = startY + (STRIKETHROUGH_OFFSET + STRIKETHROUGH_THICKNESS) / 2.0F;
 
-                    tessellator.getWorldRenderer().addVertex(x1, y1, 0);
-                    tessellator.getWorldRenderer().addVertex(x1, y2, 0);
-                    tessellator.getWorldRenderer().addVertex(x2, y2, 0);
-                    tessellator.getWorldRenderer().addVertex(x2, y1, 0);
+                    worldRenderer.pos(x1, y1, 0).endVertex();
+                    worldRenderer.pos(x1, y2, 0).endVertex();
+                    worldRenderer.pos(x2, y2, 0).endVertex();
+                    worldRenderer.pos(x2, y1, 0).endVertex();
                 }
             }
 
@@ -496,7 +507,7 @@ public final class StringCache {
             color = colorTable[colorCode] & 0xFFffff | color & 0xFF000000;
         }
 
-        Tessellator.getInstance().getWorldRenderer().setColorRGBA(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
+        GlStateManager.color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF);
         return color;
     }
 
