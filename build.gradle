@@ -1,5 +1,5 @@
 plugins {
-    id "net.minecraftforge.gradle.forge" version '2.0.2'
+    id 'net.minecraftforge.gradle.forge' version '2.0.2'
 }
 
 version = project.properties['version']
@@ -14,7 +14,7 @@ minecraft {
     runDir = 'run'
     mappings = project.properties['mcp_snapshot']
 
-    replace '@VERSION@', project.version
+    replace 'MOD_@VERSION@', project.version
 }
 
 jar {

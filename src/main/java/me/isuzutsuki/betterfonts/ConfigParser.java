@@ -2,8 +2,14 @@ package me.isuzutsuki.betterfonts;
 
 import net.minecraft.client.Minecraft;
 
-import java.awt.*;
-import java.io.*;
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Properties;
 
 /**
@@ -40,26 +46,37 @@ public final class ConfigParser
 
         try
         {
-        	File cfg = new File(Minecraft.getMinecraft().mcDataDir.getPath() + fileName);
+        	final File cfg = new File(Minecraft.getMinecraft().mcDataDir.getPath() + fileName);
         	if(!cfg.exists())
         	{
         		InputStream stream = ConfigParser.class.getResourceAsStream("/config/BetterFonts.cfg");
         		OutputStream out;
         	    if (stream == null) {
-        	    	BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] NULL Stream");
-                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
+        	    	BetterFontsCore.BETTER_FONTS_LOGGER.error(
+        	    	        "NULL Stream"
+                    );
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error(
+                            "BetterFonts failed to create new config file."
+                    );
                     return false;
         	    }
         	    int readBytes;
         	    byte[] buffer = new byte[4096];
         	    try {
-        	        out = new FileOutputStream(new File(Minecraft.getMinecraft().mcDataDir.getPath() + "/config/BetterFonts.cfg"));
+        	        out = new FileOutputStream(
+                            cfg
+                    );
         	        while ((readBytes = stream.read(buffer)) > 0) {
         	            out.write(buffer, 0, readBytes);
         	        }
         	    } catch(IOException e) {
-                    BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] IOException on creating config");
-                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error(
+                            "IOException while creating config",
+                            e
+                    );
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error(
+                            "BetterFonts failed to create new config file."
+                    );
         	    }
         	}
             FileInputStream cfgFile = new FileInputStream(cfg);
@@ -148,7 +165,10 @@ public final class ConfigParser
         }
 
         /* Print warning message if the user requested font cannot be found on the system */
-        System.out.println("BetterFonts cannot find font.name \"" + fontName + "\"");
+        BetterFontsCore.BETTER_FONTS_LOGGER.warn(
+                "BetterFonts cannot find font {} specified by \"font.name\" in the config!",
+                fontName
+        );
         return defaultValue;
     }
 
@@ -180,7 +200,7 @@ public final class ConfigParser
         }
         catch(NumberFormatException e)
         {
-            System.out.println("BetterFonts font.size must be an integer greater than zero");
+            BetterFontsCore.BETTER_FONTS_LOGGER.warn("BetterFonts config property \"font.size\" must be an integer greater than zero!");
         }
 
         return defaultValue;
@@ -203,17 +223,22 @@ public final class ConfigParser
         {
             return defaultValue;
         }
-        else if(value.compareToIgnoreCase("true") == 0)
+        else if(value.compareToIgnoreCase(Boolean.TRUE.toString()) == 0)
         {
             return true;
         }
-        else if(value.compareToIgnoreCase("false") == 0)
+        else if(value.compareToIgnoreCase(Boolean.FALSE.toString()) == 0)
         {
             return false;
         }
         else
         {
-            System.out.println("BetterFonts " + propertyName + " must be either \"true\" or \"false\"");
+            BetterFontsCore.BETTER_FONTS_LOGGER.warn(
+                    "BetterFonts {} must be either \"{}\" or \"{}\"",
+                    propertyName,
+                    Boolean.TRUE.toString(),
+                    Boolean.FALSE.toString()
+            );
             return defaultValue;
         }
     }

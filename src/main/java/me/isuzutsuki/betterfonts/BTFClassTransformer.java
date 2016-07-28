@@ -33,7 +33,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
     }
 
     @Override
-    protected String getClassName(boolean isNameTransformed) {
+    protected String getClassName(final boolean isNameTransformed) {
         return isNameTransformed ? "bty" : "net.minecraft.client.gui.FontRenderer";
     }
 
@@ -46,6 +46,7 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         };
         final String methodDesc = Type.getMethodDescriptor(
                 Type.INT_TYPE,
+
                 Type.getType(String.class),
                 Type.FLOAT_TYPE,
                 Type.FLOAT_TYPE,
@@ -72,20 +73,26 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
                 if (abstractInsnNode instanceof JumpInsnNode && abstractInsnNode.getOpcode() == Opcodes.IFEQ) {
                     JumpInsnNode jump = (JumpInsnNode)abstractInsnNode;
                     InsnList insert = new InsnList();
-                    insert.add(new VarInsnNode(
-                            Opcodes.ALOAD,
-                            0
-                    ));
-                    insert.add(new FieldInsnNode(
-                            Opcodes.GETFIELD,
-                            classNode.name,
-                            "dropShadowEnabled",
-                            "Z"
-                    ));
-                    insert.add(new JumpInsnNode(
-                            Opcodes.IFEQ,
-                            jump.label
-                    ));
+                    insert.add(
+                            new VarInsnNode(
+                                    Opcodes.ALOAD,
+                                    0
+                            )
+                    );
+                    insert.add(
+                            new FieldInsnNode(
+                                    Opcodes.GETFIELD,
+                                    classNode.name,
+                                    "dropShadowEnabled",
+                                    "Z"
+                            )
+                    );
+                    insert.add(
+                            new JumpInsnNode(
+                                    Opcodes.IFEQ,
+                                    jump.label
+                            )
+                    );
                     searching.instructions.insert(
                             jump,
                             insert);
@@ -106,8 +113,11 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
         try {
             returnBytes = super.transform(bytes, untransformedName, transformedName);
         } catch(Exception e) {
+            getLogger().error(
+                    "Caught an exception while transforming! Transformer: \"" + this + "\"",
+                    e
+            );
             returnBytes = bytes;
-            getLogger().error("Caught an exception while transforming! Transformer: \"{}\", Exception: \"{}\"", this, e);
         }
         return returnBytes;
     }
@@ -143,22 +153,36 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
             Substitution.startAdditionalInstructions(Insertion.BEGINNING, 1);
 
             Internal.betterFontsEnabled = (dropShadowEnabled = enabled = true);//Manually set variables in constructor
-            BetterFontsCore.BETTER_FONTS_LOGGER.info("Starting BetterFonts...");
+            BetterFontsCore.BETTER_FONTS_LOGGER.info(
+                    "Starting BetterFonts..."
+            );
             if (locationFontTexture.getResourcePath().equalsIgnoreCase("textures/font/ascii.png") && stringCache == null) {
                 //Read optional config file to override the default font name/size
                 ConfigParser config = new ConfigParser();
+                String fontName = "SansSerif";
                 int fontSize = 18;
                 boolean antiAlias = false;
-                String fontName = "SansSerif";
                 if (config.loadConfig("/config/BetterFonts.cfg")) {
                     fontName = config.getFontName("SansSerif");
                     fontSize = config.getFontSize(18);
-                    antiAlias = config.getBoolean("font.antialias", false);
-                    dropShadowEnabled = config.getBoolean("font.dropshadow", true);
-                    BetterFontsCore.BETTER_FONTS_LOGGER.info("Loaded configuration...");
+                    antiAlias = config.getBoolean(
+                            "font.antialias",
+                            false
+                    );
+                    dropShadowEnabled = config.getBoolean(
+                            "font.dropshadow",
+                            true
+                    );
+                    BetterFontsCore.BETTER_FONTS_LOGGER.info(
+                            "Loaded configuration..."
+                    );
                 }
                 stringCache = new StringCache(colorCode);
-                stringCache.setDefaultFont(fontName, fontSize, antiAlias);
+                stringCache.setDefaultFont(
+                        fontName,
+                        fontSize,
+                        antiAlias
+                );
             }
             Substitution.endAdditionalInstructions();
         }
@@ -179,7 +203,13 @@ public final class BTFClassTransformer extends SubstitutionTransformer implement
 
             Substitution.startAdditionalInstructions(Insertion.ENDING);
             if(Internal.betterFontsEnabled && stringCache != null) {
-                posX += stringCache.renderString(par1, par2, par3, par4, par5);
+                posX += stringCache.renderString(
+                        par1,
+                        par2,
+                        par3,
+                        par4,
+                        par5
+                );
             } else {
                 renderStringAtPos(par1,par5);
             }

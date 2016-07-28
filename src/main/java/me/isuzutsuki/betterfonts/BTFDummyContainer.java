@@ -12,7 +12,7 @@ public final class BTFDummyContainer extends DummyModContainer {
         ModMetadata meta = getMetadata();
         meta.modId = "BetterFonts";
         meta.name = "BetterFonts";
-        meta.version = "@VERSION@";
+        meta.version = "@MOD_VERSION@";
         meta.credits = "thvortex for original codes";
         meta.authorList.add("iSuzutsuki");
         meta.url = "https://secretdataz.github.io/BetterFonts";
